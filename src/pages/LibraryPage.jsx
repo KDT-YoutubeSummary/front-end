@@ -2,9 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import UserLibrary from '../../../WebstormProjects/untitled2/components/UserLibrary.jsx';
+import UserLibrary from '../components/UserLibrary.jsx';
+
+// --- 헬퍼 함수: 유튜브 ID 추출 ---
+// 이 함수는 LibraryPage 컴포넌트 '외부', 파일 '최상단'에 정의해야 합니다.
+const getYoutubeIdFromUrl = (url) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([^&\n?#]+)/);
+    return (match && match[1]) ? match[1] : null;
+};
 
 // --- 헬퍼 함수: 유튜브 썸네일 URL 생성 ---
+// 이 함수 또한 LibraryPage 컴포넌트 '외부', 파일 '최상단'에 정의해야 합니다.
 const getYoutubeThumbnailUrl = (youtubeId) => {
     if (!youtubeId) return 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image';
     return `https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`;
@@ -77,19 +86,25 @@ const LibraryPage = () => {
                 });
 
                 setLibraryItems(
-                    res.data.data.map(item => ({
-                        id: item.library_id,
-                        title: item.video_title,
-                        hashtags: item.tags,
-                        date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
-                        userNotes: item.user_notes,
-                        thumbnail: 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image', // 상세 조회 시 업데이트될 것
-                        uploader: '알 수 없음',
-                        views: 'N/A',
-                        summary: '요약 내용을 불러오는 중...',
-                        original_url: '',
-                        youtube_id: '',
-                    }))
+                    res.data.data.map(item => {
+                        // original_url이 포함되도록 백엔드를 변경하셨으므로, 여기서 활용합니다.
+                        const youtubeId = getYoutubeIdFromUrl(item.original_url); // 👈 유튜브 ID 추출
+                        const thumbnailUrl = getYoutubeThumbnailUrl(youtubeId);  // 👈 썸네일 URL 생성
+
+                        return {
+                            id: item.library_id,
+                            title: item.video_title,
+                            hashtags: item.tags,
+                            date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
+                            userNotes: item.user_notes,
+                            thumbnail: thumbnailUrl, // 👈 추출한 썸네일 URL 사용
+                            uploader: '알 수 없음', // 전체 조회 응답에 uploader_name이 있다면 item.uploader_name 사용
+                            views: 'N/A', // 전체 조회 응답에 view_count가 있다면 item.view_count 사용
+                            summary: '요약 내용을 불러오는 중...', // 상세 조회 시 업데이트될 것
+                            original_url: item.original_url, // 👈 original_url 그대로 저장
+                            youtube_id: youtubeId, // 👈 추출한 youtube_id 저장 (필요시)
+                        };
+                    })
                 );
             } catch (err) {
                 console.error('❌ 라이브러리 검색/조회 실패:', err);
@@ -107,7 +122,7 @@ const LibraryPage = () => {
             clearTimeout(handler);
         };
 
-    }, [librarySearchTerm, libraryFilterTag]);
+    }, [librarySearchTerm, libraryFilterTag]); // 의존성 배열 유지
 
     // --- 태그 통계 조회 useEffect ---
     useEffect(() => {
