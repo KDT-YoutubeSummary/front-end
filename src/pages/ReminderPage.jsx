@@ -1,283 +1,194 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { ReminderList, ReminderEditModal, ReminderSettingsModal } from '../components/Reminder';
+import React, { useState } from 'react';
+import { Trash2, Edit, X, Clock, Repeat } from 'lucide-react';
 
 /**
- * =======================================================================
- * 통합 가이드 (Integration Guide)
- * =======================================================================
- * * 이 파일의 컴포넌트들을 메인 애플리케이션(LearnClipApp)에 통합하려면
- * 아래와 같은 상태(State)와 함수(Functions)를 LearnClipApp에서 관리하고
- * 이 컴포넌트들에 props로 전달해야 합니다.
- * * --- 필요한 상태 (Required State in Parent Component) ---
- * * // 리마인더 데이터
- * const [reminders, setReminders] = useState([]);
- * * // 리마인더 생성/수정 모달 관련
- * const [showReminderModal, setShowReminderModal] = useState(false);
- * const [showReminderEditModal, setShowReminderEditModal] = useState(false);
- * const [editingReminder, setEditingReminder] = useState(null);
- * * // 리마인더 설정 값
- * const [reminderTime, setReminderTime] = useState('1시간 후');
- * const [reminderInterval, setReminderInterval] = useState('1일마다');
- * * // 현재 라이브러리에서 선택된 아이템
- * const [selectedLibraryItem, setSelectedLibraryItem] = useState(null);
- * * --- 필요한 상수 (Required Constants in Parent Component) ---
- * * const reminderTimesOptions = ['30분 후', '1시간 후', '2시간 후', '내일 같은 시간'];
- * const reminderIntervalsOptions = ['1일마다', '3일마다', '1주마다', '1달마다'];
- * * * --- 필요한 함수 (Required Functions in Parent Component) ---
- * * // API 연동 리마인더 데이터 가져오기 (useEffect 사용)
- * useEffect(() => {
- * if (!isAuthReady || !userId) return;
- * const fetchReminders = async () => {
- *   try {
- *     const response = await axios.get(`/api/reminder/user/${userId}`);
- *     setReminders(response.data);
- *   } catch (error) {
- *     console.error('리마인더 데이터 가져오기 실패:', error);
- *   }
- * };
- * fetchReminders();
- * }, [isAuthReady, userId]);
- *
- * * // 리마인더 추가
- * const handleAddReminder = async (summaryItem) => {
- *   try {
- *     const newReminder = {
- *       userId,
- *       summaryTitle: summaryItem.title,
- *       summaryContent: summaryItem.summary,
- *       reminderTime,
- *       reminderInterval,
- *       reminderNotes: ''
- *     };
- *     const response = await axios.post('/api/reminder', newReminder);
- *     setReminders(prev => [...prev, response.data]);
- *   } catch (error) {
- *     console.error('리마인더 추가 실패:', error);
- *   }
- * };
- *
- * * // 리마인더 삭제
- * const handleDeleteReminder = async (reminderId) => {
- *   try {
- *     await axios.delete(`/api/reminder/${reminderId}`);
- *     setReminders(prev => prev.filter(reminder => reminder.id !== reminderId));
- *   } catch (error) {
- *     console.error('리마인더 삭제 실패:', error);
- *   }
- * };
- *
- * * // 리마인더 수정
- * const handleUpdateReminder = async (reminderId, newNotes, newTime, newInterval) => {
- *   try {
- *     const updatedData = {
- *       reminderNotes: newNotes,
- *       reminderTime: newTime,
- *       reminderInterval: newInterval
- *     };
- *     const response = await axios.put(`/api/reminder/${reminderId}`, updatedData);
- *     setReminders(prev => prev.map(reminder =>
- *       reminder.id === reminderId ? response.data : reminder
- *     ));
- *   } catch (error) {
- *     console.error('리마인더 수정 실패:', error);
- *   }
- * };
- * */
-
-// API 엔드포인트 상수
-const API_ENDPOINTS = {
-  BASE: '/api/reminder',
-  GET_USER_REMINDERS: (userId) => `/api/reminder/user/${userId}`,
-  GET_REMINDER: (reminderId) => `/api/reminder/${reminderId}`,
-  UPDATE_REMINDER: (reminderId) => `/api/reminder/${reminderId}`,
-  DELETE_REMINDER: (reminderId) => `/api/reminder/${reminderId}`
-};
-
-// =======================================================================
-// 리마인더 페이지 컨테이너 컴포넌트 (Reminder Page Container Component)
-// =======================================================================
-export const ReminderPage = () => {
-    // 상태 관리
-    const [reminders, setReminders] = useState([]);
+ * Reminder Page Component
+ * Displays a list of all set reminders with expand, edit, and delete functionalities.
+ * @param {object} props - Component props.
+ * @param {Array<object>} props.reminders - List of reminder items.
+ * @param {function} props.handleDeleteReminder - Function to delete a reminder.
+ * @param {function} props.setShowReminderEditModal - Function to show the reminder edit modal.
+ * @param {function} props.setEditingReminder - Function to set the reminder being edited.
+ */
+const ReminderPage = ({ reminders, handleDeleteReminder, setShowReminderEditModal, setEditingReminder }) => {
     const [expandedReminderId, setExpandedReminderId] = useState(null);
-    const [showReminderEditModal, setShowReminderEditModal] = useState(false);
-    const [editingReminder, setEditingReminder] = useState(null);
-    const [editNotes, setEditNotes] = useState('');
-    const [editTime, setEditTime] = useState('');
-    const [editInterval, setEditInterval] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
 
-    // 설정 옵션 상수
-    const reminderTimesOptions = ['30분 후', '1시간 후', '2시간 후', '내일 같은 시간'];
-    const reminderIntervalsOptions = ['1일마다', '3일마다', '1주마다', '1달마다'];
-
-    // 현재 사용자 ID (실제 앱에서는 Auth 컨텍스트에서 가져와야 함)
-    const userId = 'mock-user-id-123'; // 임시 사용자 ID
-
-    // 리마인더 데이터 가져오기
-    useEffect(() => {
-        const fetchReminders = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const response = await axios.get(API_ENDPOINTS.GET_USER_REMINDERS(userId));
-                setReminders(response.data);
-            } catch (error) {
-                console.error('리마인더 데이터 가져오기 실패:', error);
-                setError('리마인더를 불러오는 중 오류가 발생했습니다.');
-                // 개발 환경에서는 더미 데이터 사용
-                if (process.env.NODE_ENV === 'development') {
-                    const dummyData = [
-                        {
-                            id: '1',
-                            summaryTitle: '자바스크립트 비동기 프로그래밍',
-                            summaryContent: '비동기 프로그래밍은 작업이 완료될 때까지 기다리지 않고 다른 작업을 수행할 수 있게 해줍니다. 프로미스와 async/await을 사용하여 비동기 코드를 더 읽기 쉽게 만들 수 있습니다.',
-                            reminderTime: '1시간 후',
-                            reminderInterval: '1일마다',
-                            reminderNotes: '프로미스 체이닝과 에러 핸들링에 대해 더 공부하기'
-                        },
-                        {
-                            id: '2',
-                            summaryTitle: 'React Hooks 기초',
-                            summaryContent: 'React Hooks는 함수형 컴포넌트에서 상태와 생명주기 기능을 사용할 수 있게 해주는 기능입니다. useState, useEffect, useContext 등이 있습니다.',
-                            reminderTime: '2시간 후',
-                            reminderInterval: '3일마다',
-                            reminderNotes: 'useCallback과 useMemo에 대해 더 알아보기'
-                        }
-                    ];
-                    setReminders(dummyData);
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchReminders();
-    }, [userId]);
-
-    // 단일 리마인더 상세 정보 가져오기
-    const fetchReminderDetail = async (reminderId) => {
-        try {
-            const response = await axios.get(API_ENDPOINTS.GET_REMINDER(reminderId));
-            return response.data;
-        } catch (error) {
-            console.error(`리마인더 ID ${reminderId} 상세 정보 가져오기 실패:`, error);
-            return null;
-        }
-    };
-
-    // 리마인더 토글 핸들러
     const toggleExpand = (id) => {
-        if (expandedReminderId === id) {
-            setExpandedReminderId(null);
-        } else {
-            setExpandedReminderId(id);
-            // 선택적으로 상세 정보를 가져올 수 있음
-            // fetchReminderDetail(id);
-        }
+        setExpandedReminderId(expandedReminderId === id ? null : id);
     };
-
-    // 수정 모달 열기 핸들러
-    const openEditModal = (reminder) => {
-        setEditingReminder(reminder);
-        setEditNotes(reminder.reminderNotes || '');
-        setEditTime(reminder.reminderTime);
-        setEditInterval(reminder.reminderInterval);
-        setShowReminderEditModal(true);
-    };
-
-    // 수정 모달 닫기 핸들러
-    const closeEditModal = () => {
-        setShowReminderEditModal(false);
-        setEditingReminder(null);
-    };
-
-    // 리마인더 삭제 핸들러
-    const handleDeleteReminder = async (reminderId) => {
-        try {
-            await axios.delete(API_ENDPOINTS.DELETE_REMINDER(reminderId));
-            setReminders(prevReminders => prevReminders.filter(reminder => reminder.id !== reminderId));
-        } catch (error) {
-            console.error('리마인더 삭제 실패:', error);
-            alert('리마인더 삭제 중 오류가 발생했습니다.');
-        }
-    };
-
-    // 리마인더 업데이트 핸들러
-    const handleUpdateReminder = async (reminderId, newNotes, newTime, newInterval) => {
-        try {
-            const updatedData = {
-                reminderNotes: newNotes,
-                reminderTime: newTime,
-                reminderInterval: newInterval
-            };
-            const response = await axios.put(API_ENDPOINTS.UPDATE_REMINDER(reminderId), updatedData);
-
-            setReminders(prevReminders =>
-                prevReminders.map(reminder =>
-                    reminder.id === reminderId ? response.data : reminder
-                )
-            );
-            closeEditModal();
-        } catch (error) {
-            console.error('리마인더 수정 실패:', error);
-            alert('리마인더 수정 중 오류가 발생했습니다.');
-        }
-    };
-
-    // 새 리마인더 생성 핸들러 (다른 컴포넌트에서 사용 가능)
-    const createReminder = async (reminderData) => {
-        try {
-            const response = await axios.post(API_ENDPOINTS.BASE, {
-                ...reminderData,
-                userId
-            });
-            setReminders(prevReminders => [...prevReminders, response.data]);
-            return response.data;
-        } catch (error) {
-            console.error('리마인더 생성 실패:', error);
-            alert('리마인더 생성 중 오류가 발생했습니다.');
-            return null;
-        }
-    };
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
-        </div>;
-    }
-
-    if (error) {
-        return <div className="text-center text-red-500 p-4">{error}</div>;
-    }
 
     return (
-        <>
-            <ReminderList
-                reminders={reminders}
-                handleDeleteReminder={handleDeleteReminder}
-                openEditModal={openEditModal}
-                expandedReminderId={expandedReminderId}
-                toggleExpand={toggleExpand}
-            />
+        <div className="max-w-4xl mx-auto space-y-6">
+            {reminders.length === 0 ? (
+                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                    <p className="text-lg font-medium">설정된 리마인더가 없습니다.</p>
+                    <p className="text-sm">라이브러리에서 요약본에 대한 리마인더를 설정해보세요.</p>
+                </div>
+            ) : (
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    {reminders.map((reminder) => (
+                        <div key={reminder.id} className="border-b border-gray-200 last:border-b-0 py-4">
+                            <div className="flex items-center justify-between">
+                                <button
+                                    onClick={() => toggleExpand(reminder.id)}
+                                    className="flex-1 text-left text-lg font-semibold text-gray-800 hover:text-red-600 transition-colors"
+                                >
+                                    {reminder.summaryTitle}
+                                </button>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            setEditingReminder(reminder);
+                                            setShowReminderEditModal(true);
+                                        }}
+                                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors transform hover:scale-110"
+                                        title="리마인더 수정"
+                                    >
+                                        <Edit className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteReminder(reminder.id)}
+                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors transform hover:scale-110"
+                                        title="리마인더 삭제"
+                                    >
+                                        <Trash2 className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => toggleExpand(reminder.id)}
+                                        className="p-2 text-gray-400 hover:text-gray-600 rounded-full transition-colors"
+                                    >
+                                        {expandedReminderId === reminder.id ? (
+                                            <svg className="h-5 w-5 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path></svg>
+                                        ) : (
+                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                            {/* Expanded Reminder Details */}
+                            {expandedReminderId === reminder.id && (
+                                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                    <h5 className="font-semibold text-gray-700 mb-2">리마인더 설정 내용:</h5>
+                                    <p className="text-gray-600 text-sm mb-1">
+                                        <Clock className="h-4 w-4 inline mr-1 text-blue-500" />
+                                        알림 시간: {reminder.reminderTime}
+                                    </p>
+                                    <p className="text-gray-600 text-sm mb-4">
+                                        <Repeat className="h-4 w-4 inline mr-1 text-purple-500" />
+                                        반복 주기: {reminder.reminderInterval}
+                                    </p>
 
-            {showReminderEditModal && editingReminder && (
-                <ReminderEditModal
-                    reminder={editingReminder}
-                    onClose={closeEditModal}
-                    onSave={handleUpdateReminder}
-                    reminderTimesOptions={reminderTimesOptions}
-                    reminderIntervalsOptions={reminderIntervalsOptions}
-                    editNotes={editNotes}
-                    setEditNotes={setEditNotes}
-                    editTime={editTime}
-                    setEditTime={setEditTime}
-                    editInterval={editInterval}
-                    setEditInterval={setEditInterval}
-                />
+                                    <h5 className="font-semibold text-gray-700 mb-2">요약 내용:</h5>
+                                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed mb-4">
+                                        {reminder.summaryContent}
+                                    </div>
+
+                                    <h5 className="font-semibold text-gray-700 mb-2">메모:</h5>
+                                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed">
+                                        {reminder.reminderNotes || '메모 없음'}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
             )}
-        </>
+        </div>
     );
 };
+
+/**
+ * Reminder Edit Modal Component
+ * Allows users to edit an existing reminder's notes, time, and interval.
+ * @param {object} props - Component props.
+ * @param {object} props.reminder - The reminder object to edit.
+ * @param {function} props.onClose - Function to close the modal.
+ * @param {function} props.onSave - Function to save the updated reminder.
+ * @param {Array<string>} props.reminderTimes - Options for reminder time.
+ * @param {Array<string>} props.reminderIntervals - Options for reminder interval.
+ */
+const ReminderEditModal = ({ reminder, onClose, onSave, reminderTimes, reminderIntervals }) => {
+    const [editNotes, setEditNotes] = useState(reminder.reminderNotes || '');
+    const [editTime, setEditTime] = useState(reminder.reminderTime);
+    const [editInterval, setEditInterval] = useState(reminder.reminderInterval);
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-auto animate-fade-in-up">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-800">리마인더 수정</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <X className="h-7 w-7" />
+                    </button>
+                </div>
+
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <Clock className="h-4 w-4 inline mr-2 text-blue-500" />
+                            알림 시간
+                        </label>
+                        <select
+                            value={editTime}
+                            onChange={(e) => setEditTime(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
+                        >
+                            {reminderTimes.map((time) => (
+                                <option key={time} value={time}>{time}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <Repeat className="h-4 w-4 inline mr-2 text-purple-500" />
+                            반복 주기
+                        </label>
+                        <select
+                            value={editInterval}
+                            onChange={(e) => setEditInterval(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
+                        >
+                            {reminderIntervals.map((interval) => (
+                                <option key={interval} value={interval}>{interval}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            메모
+                        </label>
+                        <textarea
+                            value={editNotes}
+                            onChange={(e) => setEditNotes(e.target.value)}
+                            placeholder="리마인더에 대한 메모를 추가하세요..."
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-y min-h-[100px] text-gray-700"
+                            rows="4"
+                        />
+                    </div>
+
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            onClick={() => onSave(reminder.id, editNotes, editTime, editInterval)}
+                            className="flex-1 bg-red-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-red-600 transition-colors transform hover:scale-105 shadow-md"
+                        >
+                            저장
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-bold hover:bg-gray-300 transition-colors transform hover:scale-105"
+                        >
+                            취소
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export { ReminderPage, ReminderEditModal };

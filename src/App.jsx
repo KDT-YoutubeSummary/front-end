@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // 페이지 컴포넌트 임포트
 // import LibraryPage from './pages/LibraryPage.jsx'; // 새로 생성한 페이지 임포트
+import { ReminderPage, ReminderEditModal } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트
 
 // App.jsx에서 직접 사용하는 Lucide React 아이콘들을 임포트합니다.
 import { Home, Library, Bell, User, Search, Play, Eye, Calendar, Hash, Settings, X, Clock, Repeat, LogOut, Trash2, Edit, Mail, Lock, Lightbulb } from 'lucide-react';
@@ -227,6 +228,53 @@ function App() {
     // useEffect(() => { /* fetchLibraryItems, fetchLibraryDetail ... */ }, [...]);
 
 
+    // --- Reminder 관련 핸들러 함수 ---
+    // 리마인더 삭제 핸들러
+    const handleDeleteReminder = (reminderId) => {
+        setMessageModalContent(`리마인더(ID: ${reminderId})가 삭제되었습니다. (더미 기능)`);
+        setShowMessageModal(true);
+        setReminders(prev => prev.filter(reminder => reminder.id !== reminderId));
+    };
+
+    // 리마인더 수정 핸들러
+    const handleUpdateReminder = (reminderId, notes, time, interval) => {
+        setMessageModalContent(`리마인더(ID: ${reminderId})가 수정되었습니다. (더미 기능)`);
+        setShowMessageModal(true);
+        setReminders(prev => prev.map(reminder =>
+            reminder.id === reminderId
+                ? { ...reminder, reminderNotes: notes, reminderTime: time, reminderInterval: interval }
+                : reminder
+        ));
+        setShowReminderEditModal(false);
+    };
+
+    // 더미 리마인더 데이터 생성 (테스트용)
+    useEffect(() => {
+        // 앱 시작 시 더미 리마인더 데이터 생성
+        if (reminders.length === 0) {
+            const dummyReminders = [
+                {
+                    id: '1',
+                    summaryTitle: '리액트 기초 개념 요약',
+                    summaryContent: '리액트는 컴포넌트 기반 UI 라이브러리로 가상 DOM을 활용하여 효율적인 렌더링을 제공합니다.',
+                    reminderTime: '1시간 후',
+                    reminderInterval: '1일마다',
+                    reminderNotes: '컴포넌트 개념과 상태 관리를 중점적으로 복습하기'
+                },
+                {
+                    id: '2',
+                    summaryTitle: '타입스크립트 활용법 요약',
+                    summaryContent: '타입스크립트는 자바스크립트의 슈퍼셋으로 정적 타입 기능을 제공합니다.',
+                    reminderTime: '2시간 후',
+                    reminderInterval: '3일마다',
+                    reminderNotes: ''
+                }
+            ];
+            setReminders(dummyReminders);
+        }
+    }, []);
+
+
     return (
         <div className="flex h-screen bg-gray-50 font-inter">
             {/* Sidebar */}
@@ -430,15 +478,22 @@ function App() {
                     )}
 
                     {/* Library Page Content */}
-                    {currentPage === 'library' && <LibraryPage />} {/* LibraryPage 컴포넌트 렌더링 */}
+                    {currentPage === 'library' && (
+                        // <LibraryPage /> // LibraryPage 컴포넌트 렌더링 - 현재 주석 처리됨
+                        <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">사용자 라이브러리 (더미)</h3>
+                            <p className="text-gray-600">라이브러리 페이지 구현 중입니다. LibraryPage 컴포넌트가 필요합니다.</p>
+                        </div>
+                    )}
 
                     {/* Reminder Page Content (더미) */}
                     {currentPage === 'reminder' && (
-                        <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center">
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">리마인더 페이지 (더미)</h3>
-                            <p className="text-gray-600">리마인더 목록을 표시할 페이지입니다.</p>
-                            {/* 여기에 실제 ReminderPage 컴포넌트를 렌더링 */}
-                        </div>
+                        <ReminderPage
+                            reminders={reminders}
+                            handleDeleteReminder={handleDeleteReminder}
+                            setShowReminderEditModal={setShowReminderEditModal}
+                            setEditingReminder={setEditingReminder}
+                        />
                     )}
 
                     {/* Recommendation Page Content (더미) */}
@@ -498,9 +553,12 @@ function App() {
 
             {/* Reminder Edit Modal (for existing reminders) */}
             {showReminderEditModal && editingReminder && (
-                <MessageModal
-                    message="리마인더 수정 모달 (실제 구현 필요)"
+                <ReminderEditModal
+                    reminder={editingReminder}
                     onClose={() => setShowReminderEditModal(false)}
+                    onSave={handleUpdateReminder}
+                    reminderTimes={reminderTimesOptions}
+                    reminderIntervals={reminderIntervalsOptions}
                 />
             )}
 
@@ -524,3 +582,4 @@ function App() {
 }
 
 export default App;
+
