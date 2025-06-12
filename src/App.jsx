@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-// 이제 axios는 App.jsx에서 직접적으로 라이브러리 데이터를 가져오지 않으므로 제거 가능.
-// 하지만 다른 곳에서 사용할 수 있으니 임시로 남겨둡니다.
-// import axios from 'axios';
+// axios 임포트
+import axios from 'axios';
+
+// API 서비스 임포트
+import { reminderApi, recommendationApi, setAuthToken } from './services/api';
 
 // 페이지 컴포넌트 임포트
 // import LibraryPage from './pages/LibraryPage.jsx'; // 새로 생성한 페이지 임포트
@@ -231,23 +233,69 @@ function App() {
 
     // --- Reminder 관련 핸들러 함수 ---
     // 리마인더 삭제 핸들러
-    const handleDeleteReminder = (reminderId) => {
-        setMessageModalContent(`리마인더(ID: ${reminderId})가 삭제되었습니다. (더미 기능)`);
-        setShowMessageModal(true);
-        setReminders(prev => prev.filter(reminder => reminder.id !== reminderId));
+    const handleDeleteReminder = async (reminderId) => {
+        try {
+            setIsLoading(true);
+            await reminderApi.deleteReminder(reminderId);
+            setReminders(prev => prev.filter(reminder => reminder.id !== reminderId));
+            setMessageModalContent(`리마인더가 성공적으로 삭제되었습니다.`);
+        } catch (error) {
+            console.error(`리마인더 삭제 오류:`, error);
+            setMessageModalContent(`리마인더 삭제 중 오류가 발생했습니다: ${error.message}`);
+        } finally {
+            setShowMessageModal(true);
+            setIsLoading(false);
+        }
     };
 
     // 리마인더 수정 핸들러
-    const handleUpdateReminder = (reminderId, notes, time, interval) => {
-        setMessageModalContent(`리마인더(ID: ${reminderId})가 수정되었습니다. (더미 기능)`);
-        setShowMessageModal(true);
-        setReminders(prev => prev.map(reminder =>
-            reminder.id === reminderId
-                ? { ...reminder, reminderNotes: notes, reminderTime: time, reminderInterval: interval }
-                : reminder
-        ));
-        setShowReminderEditModal(false);
+    const handleUpdateReminder = async (reminderId, notes, time, interval) => {
+        try {
+            setIsLoading(true);
+            const reminderData = {
+                reminderNotes: notes,
+                reminderTime: time,
+                reminderInterval: interval
+            };
+
+            const updatedReminder = await reminderApi.updateReminder(reminderId, reminderData);
+            setReminders(prev => prev.map(reminder =>
+                reminder.id === reminderId ? { ...reminder, ...reminderData } : reminder
+            ));
+            setMessageModalContent(`리마인더가 성공적으로 수정되었습니다.`);
+            setShowReminderEditModal(false);
+        } catch (error) {
+            console.error(`리마인더 수정 오류:`, error);
+            setMessageModalContent(`리마인더 수정 중 오류가 발생했습니다: ${error.message}`);
+        } finally {
+            setShowMessageModal(true);
+            setIsLoading(false);
+        }
     };
+
+    // 리마인더 데이터 로드
+    const fetchUserReminders = async () => {
+        if (!userId) return;
+
+        try {
+            setIsLoading(true);
+            const fetchedReminders = await reminderApi.getUserReminders(userId);
+            setReminders(fetchedReminders);
+        } catch (error) {
+            console.error('리마인더 데이터 로드 오류:', error);
+            setMessageModalContent(`리마인더 데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+            setShowMessageModal(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // 사용자 로그인 시 리마인더 데이터 로드
+    useEffect(() => {
+        if (isLoggedIn && userId) {
+            fetchUserReminders();
+        }
+    }, [isLoggedIn, userId]);
 
     // 더미 리마인더 데이터 생성 (테스트용)
     useEffect(() => {
