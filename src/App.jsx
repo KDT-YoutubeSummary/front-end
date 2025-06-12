@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // 페이지 컴포넌트 임포트
 // import LibraryPage from './pages/LibraryPage.jsx'; // 새로 생성한 페이지 임포트
 import { ReminderPage, ReminderEditModal } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트
+import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페이지 임포트
 
 // App.jsx에서 직접 사용하는 Lucide React 아이콘들을 임포트합니다.
 import { Home, Library, Bell, User, Search, Play, Eye, Calendar, Hash, Settings, X, Clock, Repeat, LogOut, Trash2, Edit, Mail, Lock, Lightbulb } from 'lucide-react';
@@ -498,11 +499,12 @@ function App() {
 
                     {/* Recommendation Page Content (더미) */}
                     {currentPage === 'recommendation' && (
-                        <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center">
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">추천 페이지 (더미)</h3>
-                            <p className="text-gray-600">추천 영상을 표시할 페이지입니다.</p>
-                            {/* 여기에 실제 RecommendationPage 컴포넌트를 렌더링 */}
-                        </div>
+                        <RecommendationPage
+                            recommendedVideo={recommendedVideo}
+                            isGeneratingRecommendation={isGeneratingRecommendation}
+                            onGenerateRecommendation={handleGenerateRecommendation}
+                            libraryItemsCount={3} // 더미 데이터 - 실제로는 LibraryPage에서 전달받아야 함
+                        />
                     )}
 
                     {/* MyPage Content (더미) */}
