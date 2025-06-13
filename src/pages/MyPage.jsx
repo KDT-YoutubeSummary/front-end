@@ -1,7 +1,6 @@
 // pages/MyPage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mail, Trash2, User as UserIcon, Play, Edit } from 'lucide-react'; // 필요한 아이콘 임포트
-// MyPageModals.js 파일의 경로에 따라 아래 import 경로를 조정해야 합니다.
+import { Mail, Trash2, User as UserIcon, Play, Edit } from 'lucide-react';
 import { ProfileEditModal, DeleteAccountModal, MessageModal, ReauthModal } from '../components/MyPageModals';
 
 /**
@@ -29,7 +28,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
     const getAuthHeader = useCallback(() => {
         const token = localStorage.getItem('accessToken');
         return token ? { 'Authorization': `Bearer ${token}` } : {};
-    }, []); // 의존성 없음
+    }, []);
 
     // --- MyPage 데이터 조회 (GET /api/mypage) ---
     useEffect(() => {
@@ -106,7 +105,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
         };
 
         fetchMyPageData();
-    }, [isLoggedIn, onShowMessage, onUpdateGlobalUserDisplay, onUserLoggedOut, getAuthHeader]); // 필요한 의존성 추가
+    }, [isLoggedIn, onShowMessage, onUpdateGlobalUserDisplay, onUserLoggedOut, getAuthHeader]);
 
 
     // --- 회원 내용 수정 (PUT /api/auth/update) ---
@@ -123,7 +122,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
             // 현재 비밀번호(currentPassword)는 인증을 위해 사용되며,
             // 백엔드가 별도의 필드를 요구하지 않는다면 Authorization 헤더로 인증되는 것으로 가정
             // 만약 백엔드가 body에 'currentPassword' 필드를 요구한다면, requestBody에 추가해야 함.
-            // 예시: requestBody.currentPassword = currentPassword;
+            // requestBody.currentPassword = currentPassword; // 필요한 경우 추가
 
             console.log("MyPage: 프로필 업데이트 요청 본문:", requestBody);
 
@@ -154,14 +153,14 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
             console.log("MyPage: 프로필 업데이트 성공 응답:", result);
 
             // 성공 응답 구조: {"userId": 2,"userName": "yeeun3641","email": "test2@example.com","message": "회원정보가 성공적으로 변경되었습니다."}
-            if (result.userName && result.email) { // 응답에 사용자 정보가 포함된 경우
+            // 백엔드가 성공 시 code 필드 없이 직접 데이터를 반환하는 경우에 대비
+            if (result.userName && result.email) {
                 onShowMessage(result.message || '프로필이 성공적으로 업데이트되었습니다.');
                 setUserId(result.userName);    // 로컬 상태 업데이트
                 setUserEmail(result.email); // 로컬 상태 업데이트
                 onUpdateGlobalUserDisplay(result.userName, result.email); // App.jsx의 전역 상태 업데이트
                 closeCallback(); // 모달 닫기
             } else {
-                // 백엔드가 성공 응답 시 message만 주거나 다른 구조일 경우
                 onShowMessage(result.message || '프로필 업데이트 완료 (응답 데이터 불확실).');
                 // 필요하다면 다시 마이페이지 데이터를 불러와 상태 동기화
                 // fetchMyPageData();

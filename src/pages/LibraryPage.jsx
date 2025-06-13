@@ -5,7 +5,6 @@ import axios from 'axios';
 import UserLibrary from '../components/UserLibrary.jsx';
 
 // --- 헬퍼 함수: 유튜브 ID 추출 ---
-// 이 함수는 LibraryPage 컴포넌트 '외부', 파일 '최상단'에 정의해야 합니다.
 const getYoutubeIdFromUrl = (url) => {
     if (!url) return null;
     const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([^&\n?#]+)/);
@@ -13,7 +12,6 @@ const getYoutubeIdFromUrl = (url) => {
 };
 
 // --- 헬퍼 함수: 유튜브 썸네일 URL 생성 ---
-// 이 함수 또한 LibraryPage 컴포넌트 '외부', 파일 '최상단'에 정의해야 합니다.
 const getYoutubeThumbnailUrl = (youtubeId) => {
     if (!youtubeId) return 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image';
     return `https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`;
@@ -49,13 +47,7 @@ const LibraryPage = () => {
     const [showMessageModal, setShowMessageModal] = useState(false); // 페이지 레벨 메시지 모달
     const [messageModalContent, setMessageModalContent] = useState('');
     const [tagStatsData, setTagStatsData] = useState([]); // 태그 통계 데이터를 저장할 상태
-
-    // 태그 통계 계산은 이제 API에서 받아온 tagStatsData를 사용합니다.
-    // 기존의 libraryItems 기반 통계 로직은 필요 없습니다.
-    const tagChartData = tagStatsData.map(stat => ({
-        name: stat.tag,
-        value: stat.count
-    }));
+    const [tagChartData, setTagChartData] = useState([]); // 차트 데이터를 저장할 상태
 
     const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98FB98', '#DA70D6', '#FFD700', '#ADD8E6'];
 
@@ -87,9 +79,8 @@ const LibraryPage = () => {
 
                 setLibraryItems(
                     res.data.data.map(item => {
-                        // original_url이 포함되도록 백엔드를 변경하셨으므로, 여기서 활용합니다.
-                        const youtubeId = getYoutubeIdFromUrl(item.original_url); // 👈 유튜브 ID 추출
-                        const thumbnailUrl = getYoutubeThumbnailUrl(youtubeId);  // 👈 썸네일 URL 생성
+                        const youtubeId = getYoutubeIdFromUrl(item.original_url);
+                        const thumbnailUrl = getYoutubeThumbnailUrl(youtubeId);
 
                         return {
                             id: item.library_id,
@@ -97,12 +88,12 @@ const LibraryPage = () => {
                             hashtags: item.tags,
                             date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
                             userNotes: item.user_notes,
-                            thumbnail: thumbnailUrl, // 👈 추출한 썸네일 URL 사용
-                            uploader: '알 수 없음', // 전체 조회 응답에 uploader_name이 있다면 item.uploader_name 사용
-                            views: 'N/A', // 전체 조회 응답에 view_count가 있다면 item.view_count 사용
-                            summary: '요약 내용을 불러오는 중...', // 상세 조회 시 업데이트될 것
-                            original_url: item.original_url, // 👈 original_url 그대로 저장
-                            youtube_id: youtubeId, // 👈 추출한 youtube_id 저장 (필요시)
+                            thumbnail: thumbnailUrl,
+                            uploader: '알 수 없음',
+                            views: 'N/A',
+                            summary: '요약 내용을 불러오는 중...',
+                            original_url: item.original_url,
+                            youtube_id: youtubeId,
                         };
                     })
                 );
@@ -122,31 +113,66 @@ const LibraryPage = () => {
             clearTimeout(handler);
         };
 
-    }, [librarySearchTerm, libraryFilterTag]); // 의존성 배열 유지
+    }, [librarySearchTerm, libraryFilterTag]);
 
-    // --- 태그 통계 조회 useEffect ---
+    // --- 태그 통계 조회 함수 (재사용을 위해 분리) ---
+    // 이 함수를 useCallback으로 감싸면, 의존성 배열에 넣을 때 성능 최적화에 도움이 됩니다.
+    const fetchTagStats = useCallback(async () => {
+        try {
+            const res = await axios.get('http://localhost:8080/api/library/stat/tags', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+            });
+            console.log('📊 태그 통계 데이터:', res.data.data);
+            setTagStatsData(res.data.data.map(item => ({ name: item.tag, value: item.count })));
+        } catch (err) {
+            console.error('❌ 태그 통계 불러오기 실패:', err);
+            setMessageModalContent('태그 통계를 불러오는 중 문제가 발생했습니다.');
+            setShowMessageModal(true);
+            setTagStatsData([]);
+        }
+    }, []); // 이 함수는 외부 의존성이 없으므로 빈 배열
+
+    // --- 태그 통계 조회 useEffect (컴포넌트 마운트 시 한 번 실행) ---
     useEffect(() => {
-        const fetchTagStats = async () => {
-            try {
-                const res = await axios.get('http://localhost:8080/api/library/stat/tags', {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                    },
-                });
-                console.log('📊 태그 통계 데이터:', res.data.data);
-                setTagStatsData(res.data.data);
-            } catch (err) {
-                console.error('❌ 태그 통계 불러오기 실패:', err);
-                setMessageModalContent('태그 통계를 불러오는 중 문제가 발생했습니다.');
-                setShowMessageModal(true);
-                setTagStatsData([]);
-            }
-        };
-
-        // LibraryPage가 로드될 때 (또는 필요시 libraryItems가 변경될 때) 태그 통계 불러오기
         fetchTagStats();
-    }, []); // 빈 배열: 컴포넌트 마운트 시 한 번만 실행 (혹은 라이브러리 목록 변경시 다시 불러올 수도 있습니다. [libraryItems])
+    }, [fetchTagStats]); // fetchTagStats 함수가 변경될 때마다 실행 (useCallback으로 인해 한 번만 실행됨)
 
+    // --- tagStatsData를 기반으로 tagChartData 가공 useEffect ---
+    useEffect(() => {
+        if (tagStatsData.length === 0) {
+            setTagChartData([]);
+            return;
+        }
+
+        const minPercentageForIndividualTag = 0.03; // 3%
+
+        const totalCount = tagStatsData.reduce((sum, tag) => sum + tag.value, 0);
+        let otherSum = 0;
+        let processedChartData = [];
+
+        if (totalCount === 0) {
+            setTagChartData([]);
+            return;
+        }
+
+        tagStatsData.forEach(tag => {
+            if (tag.value / totalCount < minPercentageForIndividualTag) {
+                otherSum += tag.value;
+            } else {
+                processedChartData.push(tag);
+            }
+        });
+
+        processedChartData.sort((a, b) => b.value - a.value);
+
+        if (otherSum > 0) {
+            processedChartData.push({ name: '기타', value: otherSum });
+        }
+
+        setTagChartData(processedChartData);
+    }, [tagStatsData]);
 
     // --- 상세 라이브러리 아이템 조회 useEffect (클릭 시 상세 정보 로드) ---
     useEffect(() => {
@@ -216,9 +242,8 @@ const LibraryPage = () => {
     // --- 핸들러 함수들 (LibraryPage에서 직접 관리) ---
 
     // 사용자 메모 추가/수정
-    // 사용자 메모 추가/수정
     const handleSaveUserNotes = async (itemId, notes) => {
-        const userId = localStorage.getItem('userId') || 3; // 로그인된 사용자 ID를 사용해야 합니다.
+        const userId = localStorage.getItem('userId') || 3;
 
         try {
             const res = await axios.patch('http://localhost:8080/api/library/note', {
@@ -232,16 +257,10 @@ const LibraryPage = () => {
                 },
             });
 
-            // --- 이 부분을 수정합니다! ---
-            // 백엔드가 성공 시 JSON 대신 문자열만 반환한다고 가정
-            // HTTP 상태 코드만으로 성공 여부를 판단합니다.
-            if (res.status === 200) { // HTTP 상태 코드가 200 (OK)인지 확인
-                // 백엔드에서 반환하는 문자열 메시지를 직접 사용하거나, 고정 메시지를 사용합니다.
-                // res.data는 "메모가 성공적으로 업데이트되었습니다." 와 같은 문자열일 것입니다.
-                setMessageModalContent(res.data || '메모가 성공적으로 저장되었습니다!'); // res.data 사용 또는 고정 메시지
+            if (res.status === 200) {
+                setMessageModalContent(res.data || '메모가 성공적으로 저장되었습니다!');
                 setShowMessageModal(true);
 
-                // 상태 업데이트 로직은 그대로 유지
                 setLibraryItems(prevItems =>
                     prevItems.map(item => item.id === itemId ? { ...item, userNotes: notes } : item)
                 );
@@ -249,21 +268,17 @@ const LibraryPage = () => {
                     setSelectedLibraryItem(prev => ({ ...prev, userNotes: notes }));
                 }
             } else {
-                // 200 OK가 아닌 다른 HTTP 상태 코드를 받았을 때
-                // 백엔드가 JSON을 보내지 않으므로, HTTP 상태 코드와 텍스트를 사용합니다.
                 setMessageModalContent(`메모 저장 실패: ${res.status} ${res.statusText}`);
                 setShowMessageModal(true);
             }
         } catch (err) {
             console.error('❌ 메모 저장 실패:', err);
 
-            // 오류 메시지 처리 강화 (이전과 동일)
             let errorMessage = '알 수 없는 오류가 발생했습니다.';
 
             if (err.response) {
-                if (err.response.data) { // err.response.data가 문자열일 수도 있으므로, 객체 여부 확인 없이 사용
-                    // 백엔드가 오류 시에도 문자열 메시지만 보낼 수 있음
-                    errorMessage = err.response.data; // 예: "인증 실패"
+                if (err.response.data) {
+                    errorMessage = err.response.data;
                 } else if (err.response.status) {
                     errorMessage = `서버 응답 오류: ${err.response.status} (${err.response.statusText})`;
                 }
@@ -297,6 +312,10 @@ const LibraryPage = () => {
                 // libraryItems에서 삭제된 아이템 제거
                 setLibraryItems(prev => prev.filter(item => item.id !== itemId));
                 setSelectedLibraryItem(null); // 삭제 후 상세 화면 닫기
+
+                // ⭐ 아이템 삭제 후 태그 통계를 다시 불러옵니다! ⭐
+                fetchTagStats();
+
             } else {
                 setMessageModalContent(`삭제 실패: ${res.data.message}`);
                 setShowMessageModal(true);
@@ -332,7 +351,7 @@ const LibraryPage = () => {
                 setLibrarySearchTerm={setLibrarySearchTerm}
                 libraryFilterTag={libraryFilterTag}
                 setLibraryFilterTag={setLibraryFilterTag}
-                tagChartData={tagChartData} // 이제 API에서 가져온 tagStatsData를 기반으로 한 tagChartData 전달
+                tagChartData={tagChartData}
                 showTagStats={showTagStats}
                 setShowTagStats={setShowTagStats}
                 COLORS={COLORS}

@@ -1,8 +1,22 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  /*max-width: 1280px;*/
+  /*margin: 0 auto;*/
+  /*padding: 2rem;*/
+  /*text-align: center;*/
+
+  height: 100%;
+  width: 100%;
+  display: flex;
+  padding: 1em;
+  flex-direction: column;
 }
 
 .logo {
@@ -39,4 +53,34 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* 반응형 레이아웃을 위한 추가 스타일 */
+@media (max-width: 768px) {
+  .card {
+    padding: 1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 0.5em;
+  }
+}
+
+/* Recharts 파이 차트 섹터의 포커스 아웃라인 제거 */
+.recharts-pie-sector:focus,
+.recharts-pie-sector > g:focus,
+.recharts-pie-sector > g > g:focus {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+}
+
+/* 일반적인 SVG 요소에 대한 포커스 아웃라인 제거 (광범위하게 적용될 수 있음) */
+svg:focus,
+path:focus,
+g:focus {
+  outline: none !important;
 }

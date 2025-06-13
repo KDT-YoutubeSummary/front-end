@@ -74,11 +74,11 @@ const UserLibrary = ({
                                 <p className="text-gray-600 text-sm mb-2">{selectedLibraryItem.uploader}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                     <div className="flex items-center space-x-1">
-                                        <Eye className="h-4 w-4" />
+                                        <Eye className="h-4 w-4"/>
                                         <span>{selectedLibraryItem.views} 조회수</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
-                                        <Calendar className="h-4 w-4" />
+                                        <Calendar className="h-4 w-4"/>
                                         <span>{selectedLibraryItem.date}</span>
                                     </div>
                                 </div>
@@ -90,21 +90,21 @@ const UserLibrary = ({
                                 className="p-3 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors transform hover:scale-110"
                                 title="리마인더 설정"
                             >
-                                <Bell className="h-6 w-6" />
+                                <Bell className="h-6 w-6"/>
                             </button>
                             <button
                                 onClick={() => handleDeleteLibraryItem(selectedLibraryItem.id)}
                                 className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors transform hover:scale-110"
                                 title="삭제"
                             >
-                                <Trash2 className="h-6 w-6" />
+                                <Trash2 className="h-6 w-6"/>
                             </button>
                             <button
                                 onClick={() => setSelectedLibraryItem(null)}
                                 className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors transform hover:scale-110"
                                 title="목록으로 돌아가기"
                             >
-                                <X className="h-6 w-6" />
+                                <X className="h-6 w-6"/>
                             </button>
                         </div>
                     </div>
@@ -112,7 +112,7 @@ const UserLibrary = ({
                     {/* Hashtags */}
                     <div className="px-6 py-4 border-b border-gray-200">
                         <div className="flex items-center space-x-2">
-                            <Hash className="h-4 w-4 text-gray-400" />
+                            <Hash className="h-4 w-4 text-gray-400"/>
                             <div className="flex flex-wrap gap-2">
                                 {selectedLibraryItem.hashtags?.map((tag, index) => (
                                     <span
@@ -158,9 +158,10 @@ const UserLibrary = ({
                 // Library Grid View (Main Library Page)
                 <div className="space-y-6">
                     {/* Search and Filter Inputs */}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex flex-col sm:flex-row gap-4">
+                    <div
+                        className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex flex-col sm:flex-row gap-4">
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
                             <input
                                 type="text"
                                 placeholder="제목으로 검색..."
@@ -170,7 +171,7 @@ const UserLibrary = ({
                             />
                         </div>
                         <div className="flex-1 relative">
-                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
                             <input
                                 type="text"
                                 placeholder="태그로 필터링..."
@@ -183,14 +184,16 @@ const UserLibrary = ({
 
                     {/* Loading or No Results Message */}
                     {isSearching ? (
-                        <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col items-center justify-center">
-                            <Loader2 className="h-10 w-10 animate-spin text-red-500 mb-4" />
+                        <div
+                            className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col items-center justify-center">
+                            <Loader2 className="h-10 w-10 animate-spin text-red-500 mb-4"/>
                             <p className="text-lg font-medium">검색 중...</p>
                             <p className="text-sm">잠시만 기다려주세요.</p>
                         </div>
                     ) : (
                         libraryItems.length === 0 ? (
-                            <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                            <div
+                                className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
                                 <p className="text-lg font-medium">검색 결과가 없습니다.</p>
                                 <p className="text-sm">다른 검색어나 태그를 시도해보세요.</p>
                             </div>
@@ -231,6 +234,7 @@ const UserLibrary = ({
                         )
                     )}
 
+
                     {/* Tag Statistics Section */}
                     <div className="mt-8 pt-8 border-t border-gray-200">
                         <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
@@ -255,15 +259,14 @@ const UserLibrary = ({
                                                 fill="#8884d8"
                                                 dataKey="value"
                                                 labelLine={false}
-                                                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                                label={({name, percent}) => `${name} (${(percent * 100).toFixed(0)}%)`}
                                             >
                                                 {tagChartData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}/>
                                                 ))}
                                             </Pie>
-                                            <Tooltip />
-                                            <Legend layout="vertical" align="right" verticalAlign="middle" />
-                                        </PieChart>
+                                            <Tooltip/>
+                                            </PieChart>
                                     </ResponsiveContainer>
                                 ) : (
                                     <p className="text-center text-gray-600">태그 통계를 표시할 데이터가 없습니다.</p>
@@ -276,5 +279,4 @@ const UserLibrary = ({
         </div>
     );
 };
-
 export default UserLibrary;

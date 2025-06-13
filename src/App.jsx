@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
+// CSS 파일 임포트
+import './App.css';
+
 // 페이지 컴포넌트 임포트
 import LibraryPage from './pages/LibraryPage.jsx'; // LibraryPage가 이미 구현되었다고 가정
 import MyPage from './pages/MyPage'; // MyPage 컴포넌트 임포트
@@ -177,7 +180,7 @@ function App() {
                 handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
             } else {
                 // 백엔드에서 에러 메시지를 result.message에 담아 보낼 것으로 가정. 없다면 일반적인 실패 메시지.
-                throw new Error(result.message || `회원가입 실패: ${result.code || response.status} ${response.statusText}`);
+                throw new Error(result.message || `회회원가입 실패: ${result.code || response.status} ${response.statusText}`);
             }
 
         } catch (error) {
@@ -308,8 +311,10 @@ function App() {
 
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-inter overflow-hidden">
+        // 전체 레이아웃 컨테이너: flex-col (모바일) -> md:flex-row (데스크탑), h-screen으로 높이 고정
+        <div className="flex min-h-screen w-full bg-gray-50 font-inter">
             {/* Sidebar */}
+            {/* w-full sm:w-20 md:w-64: 모바일에서 전체 너비, sm에서 20px, md에서 64px 고정 너비 */}
             <div className="w-full sm:w-20 md:w-64 flex-none bg-white shadow-lg border-r border-gray-200 rounded-tr-xl rounded-br-xl flex flex-col">
                 {/* 로고 영역 */}
                 <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
@@ -322,6 +327,7 @@ function App() {
                 </div>
 
                 {/* 메뉴 항목 */}
+                {/* flex-grow: 남은 공간 채우기, overflow-y-auto: 메뉴 스크롤 가능 */}
                 <nav className="mt-4 flex-grow overflow-y-auto flex flex-col">
                     {menuItems.map((item) => {
                         const IconComponentMap = {
@@ -368,8 +374,9 @@ function App() {
                 </nav>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Main Content Area */}
+            {/* flex-1: 남은 공간 채우기, flex-col: 내부 요소 세로 정렬, w-full: 항상 너비 100% */}
+            <div className="flex-1 flex flex-col w-full">
                 {/* Header */}
                 <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 md:px-8 md:py-4 flex items-center justify-between rounded-bl-xl flex-shrink-0">
                     <h2 className="text-xl md:text-2xl font-bold text-gray-800 truncate">
@@ -385,8 +392,9 @@ function App() {
                     </div>
                 </div>
 
-                {/* Content Area - 반응형 패딩 적용 */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100">
+                {/* Content Area - 실제 페이지가 렌더링되는 스크롤 가능한 영역 */}
+                {/* flex-1: 남은 공간 채우기, overflow-y-auto: 세로 스크롤 가능, w-full: 항상 너비 100% */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100 w-full">
                     {/* AuthPage 렌더링 */}
                     {showAuthPage && (
                         <AuthPage
@@ -400,7 +408,8 @@ function App() {
                     {!showAuthPage && (
                         <>
                             {currentPage === 'main' && (
-                                <div className="max-w-full md:max-w-4xl mx-auto">
+                                <div className="max-w-none w-full">
+                                {/* mx-auto는 max-w 있을때만 작동 */}
                                     {!showSummary ? (
                                         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
                                             <div className="space-y-4 md:space-y-6">
@@ -526,14 +535,14 @@ function App() {
                             {currentPage === 'library' && <LibraryPage />}
 
                             {currentPage === 'reminder' && (
-                                <div className="max-w-full md:max-w-4xl mx-auto p-6 md:p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center">
+                                <div className="max-w-full mx-auto p-6 md:p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center"> {/* md:max-w-4xl 제거 */}
                                     <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">리마인더 페이지 (더미)</h3>
                                     <p className="text-gray-600 text-sm md:text-base">리마인더 목록을 표시할 페이지입니다.</p>
                                 </div>
                             )}
 
                             {currentPage === 'recommendation' && (
-                                <div className="max-w-full md:max-w-4xl mx-auto p-6 md:p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center">
+                                <div className="max-w-full mx-auto p-6 md:p-8 bg-white rounded-xl shadow-lg border border-gray-200 text-center"> {/* md:max-w-4xl 제거 */}
                                     <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">추천 페이지 (더미)</h3>
                                     <p className="text-gray-600 text-sm md:text-base">추천 영상을 표시할 페이지입니다.</p>
                                 </div>

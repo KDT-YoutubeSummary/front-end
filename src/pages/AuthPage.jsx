@@ -1,10 +1,9 @@
-// src/pages/AuthPage.jsx
 import React, { useState } from 'react';
 
 // AuthPage는 이제 독립적인 페이지 컴포넌트이므로,
-// fixed inset-0와 같은 모달 스타일은 App.jsx에서 관리하거나 제거해야 합니다.
-// 여기서는 해당 스타일을 제거하여 일반 페이지처럼 작동하도록 합니다.
-const AuthPage = ({ onLogin, onSignup, onMessage }) => { // onMessage prop 유지
+// 페이지 전체를 채우는 스타일을 다시 적용하고,
+// 스크롤이 생기지 않도록 overflow를 제어하며 컴포넌트 크기를 조정합니다.
+const AuthPage = ({ onLogin, onSignup, onMessage }) => {
     const [mode, setMode] = useState('login'); // 'login' or 'signup'
     const [username, setUsername] = useState(''); // 로그인 시 사용할 아이디 (유저네임)
     const [email, setEmail] = useState(''); // 회원가입 시 이메일
@@ -30,7 +29,7 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => { // onMessage prop 유�
                 // 회원가입 시에는 username, password, email 모두 전달
                 await onSignup(username, password, email);
                 // 회원가입 성공 후 메시지를 띄우고 로그인 모드로 전환
-                setLocalMessage('회원가입 성공! 로그인해주세요.');
+                setLocalMessage('회원가입 성공! 이제 로그인해주세요.');
                 setMode('login');
                 setUsername(''); setEmail(''); setPassword(''); setConfirmPassword(''); // 필드 초기화
             }
@@ -42,9 +41,14 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => { // onMessage prop 유�
     };
 
     return (
-        // 모달처럼 고정되는 스타일 대신, 일반 페이지 콘텐츠 영역에 맞춰 정렬되도록 변경
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] bg-gray-50 p-6"> {/* 헤더 높이만큼 min-h 조정 */}
-            <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full">
+        // AuthPage를 페이지 콘텐츠 영역에 맞춰 전체 높이를 채우고 중앙 정렬합니다.
+        // min-h-[calc(100vh-80px)]: 헤더 높이를 제외한 뷰포트 높이의 최소값을 설정합니다.
+        // bg-gray-50: 페이지 배경색을 설정합니다.
+        // p-6: 기존에 AuthPage에 있던 패딩은 App.jsx의 메인 컨텐츠 영역에서 관리하므로 제거합니다.
+        // overflow-hidden: 이 컴포넌트 자체 내에서 스크롤이 생기지 않도록 합니다.
+        //                  (내용이 넘칠 경우 잘리게 되므로, 내부 콘텐츠를 잘 조절해야 합니다.)
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] bg-gray-50 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-xl p-8 max-w-xl w-full"> {/* max-w-lg -> max-w-xl로 변경하여 컴포넌트 크기를 키웁니다. */}
                 <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                     {mode === 'login' ? '로그인' : '회원가입'}
                 </h2>
