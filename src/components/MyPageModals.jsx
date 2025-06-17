@@ -11,6 +11,9 @@ import { X, Mail, Lock, Trash2, User as UserIcon } from 'lucide-react';
  * @param {function} props.onClose - Function to close the modal.
  * @param {function} props.onSave - Function to save changes (expects currentPassword, newEmail, newPassword, newId, onClose).
  */
+
+
+// ProfileEditModal 컴포넌트는 사용자가 ID, 이메일, 비밀번호를 한 번에 변경할 수 있는 모달입니다.
 export const ProfileEditModal = ({ currentId, currentEmail, onClose, onSave }) => {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newId, setNewId] = useState(currentId); // ID 수정을 위한 새로운 상태
@@ -107,6 +110,7 @@ export const ProfileEditModal = ({ currentId, currentEmail, onClose, onSave }) =
  * @param {function} props.onClose - Function to close the modal.
  * @param {function} props.onDelete - Function to handle account deletion (expects password).
  */
+// // DeleteAccountModal 컴포넌트는 사용자가 계정을 삭제하기 전에 비밀번호를 입력하도록 요청하는 모달입니다.
 export const DeleteAccountModal = ({ onClose, onDelete }) => {
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
@@ -166,6 +170,7 @@ export const DeleteAccountModal = ({ onClose, onDelete }) => {
  * @param {function} [props.onConfirm] - Optional callback for confirmation actions.
  * @param {boolean} [props.isConfirm] - If true, shows a confirm button.
  */
+// MessageModal 컴포넌트는 사용자에게 메시지를 표시하는 모달입니다.
 export const MessageModal = ({ message, onClose, onConfirm, isConfirm = false }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -200,6 +205,7 @@ export const MessageModal = ({ message, onClose, onConfirm, isConfirm = false })
  * @param {function} props.onClose - Function to close the modal.
  * @param {function} props.onReauthenticate - Callback function to execute after reauthentication.
  */
+// ReauthModal 컴포넌트는 민감한 작업을 수행하기 전에 사용자가 비밀번호를 입력하도록 요청하는 모달입니다.
 export const ReauthModal = ({ onClose, onReauthenticate }) => {
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');

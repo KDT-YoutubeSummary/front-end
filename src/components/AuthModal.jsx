@@ -14,6 +14,7 @@ import { X } from 'lucide-react'; // 모달 닫기 버튼에 사용할 아이콘
  * @param {function} props.onClose - 모달 닫기 버튼 클릭 시 호출되는 콜백 함수
  * @param {function} props.onMessage - 전역 메시지 모달을 띄우는 콜백 함수
  */
+// 이 컴포넌트는 AuthPage를 모달로 감싸고, 배경 오버레이와 닫기 버튼을 추가합니다.
 const AuthModal = ({ onLogin, onSignup, onClose, onMessage }) => {
     return (
         // 모달 오버레이: 전체 화면을 덮고 배경을 어둡게 만듭니다.
