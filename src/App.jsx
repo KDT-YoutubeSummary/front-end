@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
 // API 서비스 임포트
-import { reminderApi, recommendationApi, setAuthToken } from './services/api';
+import { reminderApi, recommendationApi, setAuthToken } from './services/api.jsx';
 
 // 페이지 컴포넌트 임포트
 // import LibraryPage from './pages/LibraryPage.jsx'; // 새로 생성한 페이지 임포트
@@ -38,7 +38,7 @@ const MessageModal = ({ message, onClose }) => {
 function App() {
     // --- UI and Modal States ---
     const [currentPage, setCurrentPage] = useState('main');
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(true); // false에서 true로 변경
     const [showLogin, setShowLogin] = useState(false);
     const [showSignup, setShowSignup] = useState(false);
     const [isLoading, setIsLoading] = useState(false); // 요약 기능 로딩
@@ -54,8 +54,8 @@ function App() {
     const [youtubeUrl, setYoutubeUrl] = useState('');
 
     // --- Firebase Related States (더미) ---
-    const [userId, setUserId] = useState('mock-user-id-123');
-    const [userEmail, setUserEmail] = useState('mockuser@example.com');
+    const [userId, setUserId] = useState('1');
+    const [userEmail, setUserEmail] = useState('test@example.com');
     const [isAuthReady, setIsAuthReady] = useState(true);
 
     // --- Recommendation Page States ---

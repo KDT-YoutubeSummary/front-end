@@ -1,4 +1,4 @@
-// src/services/api.js
+// src/services/api.jsx
 import axios from 'axios';
 
 // API 클라이언트 생성

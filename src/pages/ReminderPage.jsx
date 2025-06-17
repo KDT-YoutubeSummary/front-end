@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Reminder from '../components/Reminder';
 import ReminderEditModal from '../components/ReminderEditModal';
-import { reminderApi } from '../services/api';
+import { reminderApi } from '../services/api.jsx';
 
 /**
  * Reminder Page Component
@@ -18,6 +18,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     const [showReminderEditModal, setShowReminderEditModal] = useState(false);
     const [editingReminder, setEditingReminder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
     // --- Constants ---
     const reminderTimesOptions = ['30분 후', '1시간 후', '2시간 후', '내일 같은 시간'];
@@ -43,16 +44,59 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     const handleUpdateReminder = async (reminderId, notes, time, interval) => {
         try {
             setIsLoading(true);
+
+            // UI에서 선택한 값을 API 형식으로 변환
+            let reminderType = 'ONE_TIME';
+            let frequencyInterval = 1;
+
+            // reminderInterval 값에 따라 타입과 간격 설정
+            if (interval.includes('일마다')) {
+                reminderType = 'DAILY';
+                frequencyInterval = parseInt(interval);
+            } else if (interval.includes('주마다')) {
+                reminderType = 'WEEKLY';
+                frequencyInterval = parseInt(interval);
+            } else if (interval.includes('달마다')) {
+                reminderType = 'MONTHLY';
+                frequencyInterval = parseInt(interval);
+            }
+
+            // 시간 설정 처리 (현재는 단순화해서 기본 일시 사용)
+            const baseDatetime = new Date();
+
+            // reminderTime 값에 따라 시간 조정
+            if (time.includes('분 후')) {
+                baseDatetime.setMinutes(baseDatetime.getMinutes() + parseInt(time));
+            } else if (time.includes('시간 후')) {
+                baseDatetime.setHours(baseDatetime.getHours() + parseInt(time));
+            } else if (time === '내일 같은 시간') {
+                baseDatetime.setDate(baseDatetime.getDate() + 1);
+            }
+
+            // API 요청 데이터 형식으로 변환
             const reminderData = {
-                reminderNotes: notes,
-                reminderTime: time,
-                reminderInterval: interval
+                reminderType: reminderType,
+                frequencyInterval: frequencyInterval,
+                baseDatetimeForRecurrence: baseDatetime.toISOString(),
+                reminderNote: notes,
+                isActive: true
             };
 
+            console.log('수정 API 요청 데이터:', reminderData);
+
             const updatedReminder = await reminderApi.updateReminder(reminderId, reminderData);
+            console.log('수정 API 응답:', updatedReminder);
+
+            // UI 업데이트를 위한 데이터 형식 변환
             setReminders(prev => prev.map(reminder =>
-                reminder.id === reminderId ? { ...reminder, ...reminderData } : reminder
+                reminder.id === reminderId ? {
+                    ...reminder,
+                    reminderNotes: notes,
+                    reminderTime: time,
+                    reminderInterval: interval
+                } : reminder
             ));
+
             setMessageModalContent(`리마인더가 성공적으로 수정되었습니다.`);
             setShowReminderEditModal(false);
         } catch (error) {
@@ -71,13 +115,59 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
         try {
             setIsLoading(true);
             const fetchedReminders = await reminderApi.getUserReminders(userId);
-            setReminders(fetchedReminders);
+            console.log('로드된 리마인더 데이터:', fetchedReminders);
+
+            // API 데이터를 컴포넌트에 맞게 변환
+            const formattedReminders = fetchedReminders.map(reminder => ({
+                id: reminder.reminderId,
+                summaryTitle: `리마인더 ${reminder.reminderId}`,
+                reminderTime: formatReminderTime(reminder.nextNotificationDatetime),
+                reminderInterval: formatReminderInterval(reminder.reminderType, reminder.frequencyInterval),
+                summaryContent: `알림 예정: ${new Date(reminder.nextNotificationDatetime).toLocaleString()}`,
+                reminderNotes: reminder.reminderNote || '메모 없음'
+            }));
+
+            setReminders(formattedReminders);
         } catch (error) {
             console.error('리마인더 데이터 로드 오류:', error);
             setMessageModalContent(`리마인더 데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
             setShowMessageModal(true);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // 리마인더 시간 포맷팅 함수
+    const formatReminderTime = (dateTimeStr) => {
+        if (!dateTimeStr) return '시간 정보 없음';
+
+        const reminderDate = new Date(dateTimeStr);
+        const now = new Date();
+        const diffMinutes = Math.floor((reminderDate - now) / (1000 * 60));
+
+        if (diffMinutes < 0) {
+            return '지난 알림';
+        } else if (diffMinutes < 60) {
+            return `${diffMinutes}분 후`;
+        } else if (diffMinutes < 60 * 24) {
+            return `${Math.floor(diffMinutes / 60)}시간 후`;
+        } else {
+            return reminderDate.toLocaleDateString() + ' ' + reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+    };
+
+    // 리마인더 주기 포맷팅 함수
+    const formatReminderInterval = (reminderType, interval) => {
+        if (reminderType === 'ONE_TIME') {
+            return '한 번만';
+        } else if (reminderType === 'DAILY') {
+            return `${interval}일마다`;
+        } else if (reminderType === 'WEEKLY') {
+            return `${interval}주마다`;
+        } else if (reminderType === 'MONTHLY') {
+            return `${interval}개월마다`;
+        } else {
+            return '알 수 없는 주기';
         }
     };
 
@@ -88,31 +178,35 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
         }
     }, [isLoggedIn, userId]);
 
-    // 더미 리마인더 데이터 생성 (테스트용)
+    // Intersection Observer를 사용하여 컴포넌트가 화면에 표시될 때 감지
     useEffect(() => {
-        // 앱 시작 시 더미 리마인더 데이터 생성
-        if (reminders.length === 0) {
-            const dummyReminders = [
-                {
-                    id: '1',
-                    summaryTitle: '리액트 기초 개념 요약',
-                    summaryContent: '리액트는 컴포넌트 기반 UI 라이브러리로 가상 DOM을 활용하여 효율적인 렌더링을 제공합니다.',
-                    reminderTime: '1시간 후',
-                    reminderInterval: '1일마다',
-                    reminderNotes: '컴포넌트 개념과 상태 관리를 중점적으로 복습하기'
-                },
-                {
-                    id: '2',
-                    summaryTitle: '타입스크립트 활용법 요약',
-                    summaryContent: '타입스크립트는 자바스크립트의 슈퍼셋으로 정적 타입 기능을 제공합니다.',
-                    reminderTime: '2시간 후',
-                    reminderInterval: '3일마다',
-                    reminderNotes: ''
-                }
-            ];
-            setReminders(dummyReminders);
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // 화면에 표시되는지 확인
+                setIsVisible(entry.isIntersecting);
+            },
+            { threshold: 0.1 } // 10% 이상 보이면 표시된 것으로 간주
+        );
+
+        // 현재 컴포넌트를 관찰 대상으로 설정
+        const currentElement = document.getElementById('reminder-page');
+        if (currentElement) {
+            observer.observe(currentElement);
         }
+
+        return () => {
+            if (currentElement) {
+                observer.unobserve(currentElement);
+            }
+        };
     }, []);
+
+    // 컴포넌트가 화면에 표시될 때 리마인더 데이터 다시 로드
+    useEffect(() => {
+        if (isVisible && isLoggedIn && userId) {
+            fetchUserReminders();
+        }
+    }, [isVisible, isLoggedIn, userId]);
 
     const handleEditReminder = (reminder) => {
         setEditingReminder(reminder);
@@ -120,7 +214,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div id="reminder-page" className="max-w-4xl mx-auto space-y-6">
             {isLoading && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-auto text-center animate-fade-in-up">
