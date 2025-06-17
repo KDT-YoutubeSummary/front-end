@@ -1,5 +1,6 @@
-import React from 'react';
-import { Lightbulb, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lightbulb } from 'lucide-react';
+import Recommendation from '../components/Recommendation';
 
 /**
  * Recommendation Page Component
@@ -9,41 +10,68 @@ import { Lightbulb, Play } from 'lucide-react';
  * @param {boolean} props.isGeneratingRecommendation - Loading state for recommendation.
  * @param {function} props.onGenerateRecommendation - Function to trigger recommendation generation.
  * @param {number} props.libraryItemsCount - Count of library items (to enable/disable button).
+ * @param {function} props.onNavigateToLibrary - Function to navigate to library page.
  */
-const RecommendationPage = ({ recommendedVideo, isGeneratingRecommendation, onGenerateRecommendation, libraryItemsCount }) => {
+const RecommendationPage = ({
+  recommendedVideo,
+  isGeneratingRecommendation,
+  onGenerateRecommendation,
+  libraryItemsCount,
+  // 통합 시 주의: 이 props는 App.jsx에서 전달되며, 파일 구조 변경에 따라 수정이 필요합니다.
+  onNavigateToLibrary
+}) => {
+    // 컴포넌트가 화면에 표시되는지 감지
+    const [isVisible, setIsVisible] = useState(false);
+
+    // Intersection Observer를 사용하여 컴포넌트가 화면에 표시될 때 감지
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // 화면에 표시되는지 확인
+                setIsVisible(entry.isIntersecting);
+            },
+            { threshold: 0.1 } // 10% 이상 보이면 표시된 것으로 간주
+        );
+
+        // 현재 컴포넌트를 관찰 대상으로 설정
+        const currentElement = document.getElementById('recommendation-page');
+        if (currentElement) {
+            observer.observe(currentElement);
+        }
+
+        return () => {
+            if (currentElement) {
+                observer.unobserve(currentElement);
+            }
+        };
+    }, []);
+
     return (
-        <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 space-y-6 text-center">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">영상을 추천받으세요!</h3>
-            <p className="text-gray-600 mb-6">사용자 라이브러리의 요약본 태그를 기반으로 <br/>흥미로워할 만한 YouTube 동영상을 추천해 드립니다.</p>
+        <div id="recommendation-page" className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 space-y-6 text-center">
+            {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
+            {!recommendedVideo ? (
+                <>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">영상을 추천받으세요!</h3>
+                    <p className="text-gray-600 mb-6">사용자 라이브러리에 요약본을 추가하면 <br/>요약본의 태그를 분석하여 관심사에 맞는 YouTube 동영상을 추천해 드립니다.</p>
 
-            <button
-                onClick={onGenerateRecommendation}
-                disabled={isGeneratingRecommendation || libraryItemsCount === 0}
-                className="bg-purple-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 shadow-md"
-            >
-                {isGeneratingRecommendation ? '추천 생성 중...' : (libraryItemsCount === 0 ? '요약본 없음' : '추천 영상 받기')}
-            </button>
+                    {/*
+                      * 주의: 통합 개발 시 파일 구조 변경에 따라 이 버튼의 동작 방식을 수정해야 합니다.
+                      * LibraryPage 컴포넌트 구현 완료 후 onNavigateToLibrary 함수의 실제 구현을 연결해야 합니다.
+                      * 현재는 App.jsx의 setCurrentPage 함수를 사용하여 페이지 전환을 처리하지만,
+                      * 향후 React Router 등을 사용하는 경우 이 부분을 useNavigate 또는 Link 컴포넌트로 변경해야 합니다.
+                      */}
+                    <button
+                        onClick={onNavigateToLibrary} // 사용자 라이브러리 페이지로 이동하는 함수 호출
+                        className="bg-purple-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 shadow-md"
+                    >
+                        사용자 라이브러리 등록
+                    </button>
+                </>
+            ) : null}
 
+            {/* Recommendation 컴포넌트 사용 */}
             {recommendedVideo && (
-                <div className="mt-8 p-6 border-t-2 border-purple-200 bg-purple-50 rounded-lg text-left shadow-inner">
-                    <h4 className="text-xl font-semibold text-purple-800 mb-3 flex items-center space-x-2">
-                        <Lightbulb className="h-6 w-6" />
-                        <span>추천 영상</span>
-                    </h4>
-                    <h5 className="text-lg font-bold text-gray-800 mb-2">{recommendedVideo.title}</h5>
-                    <p className="text-gray-700 mb-3 leading-relaxed">{recommendedVideo.reason}</p>
-                    {recommendedVideo.youtubeUrl && (
-                        <a
-                            href={recommendedVideo.youtubeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                        >
-                            <Play className="h-4 w-4 mr-1" />
-                            영상 보기 (목업 URL)
-                        </a>
-                    )}
-                </div>
+                <Recommendation recommendation={recommendedVideo} />
             )}
         </div>
     );

@@ -162,6 +162,14 @@ function App() {
         handleLogout(); // 더미 로그아웃 처리
     };
 
+    // 사용자 라이브러리 페이지로 이동하는 함수
+    // 주의: 통합 개발 시 파일 구조 변경에 따라 이 함수의 구현을 수정해야 합니다.
+    // 현재는 단순히 현재 페이지 상태를 변경하지만, React Router 사용 시 history.push 또는 navigate 함수로 변경해야 합니다.
+    // LibraryPage 컴포넌트 구현 완료 후에는 라이브러리 데이터 로딩 로직도 추가해야 할 수 있습니다.
+    const handleNavigateToLibrary = () => {
+        setCurrentPage('library');
+    };
+
     const handleGenerateRecommendation = async () => {
         // libraryItems는 이제 LibraryPage에 있으므로, App.jsx에서는 직접 접근 불가
         // 추천 로직을 위한 데이터는 LibraryPage로부터 props로 받거나 별도의 컨텍스트로 관리해야 합니다.
@@ -510,6 +518,7 @@ function App() {
                             isGeneratingRecommendation={isGeneratingRecommendation}
                             onGenerateRecommendation={handleGenerateRecommendation}
                             libraryItemsCount={3} // 더미 데이터 - 실제로는 LibraryPage에서 전달받아야 함
+                            onNavigateToLibrary={handleNavigateToLibrary} // 라이브러리 페이지로 이동하는 함수 전달
                         />
                     )}
 
