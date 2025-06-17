@@ -1,6 +1,6 @@
 // src/pages/LibraryPage.jsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import UserLibrary from '../components/UserLibrary.jsx';
 
@@ -35,6 +35,19 @@ const MessageModal = ({ message, onClose }) => {
     );
 };
 
+// --- 로딩 모달 컴포넌트 ---
+const LoadingModal = ({ message }) => {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-auto text-center animate-fade-in-up">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-red-500 mx-auto mb-6"></div>
+                <h3 className="text-lg font-semibold text-gray-800">{message}</h3>
+                <p className="text-gray-500 text-sm mt-2">잠시만 기다려주세요...</p>
+            </div>
+        </div>
+    );
+};
+
 // --- 리마인더 설정 모달 컴포넌트 ---
 const ReminderModal = ({ isOpen, onClose, onSave, itemTitle }) => {
     const [date, setDate] = useState('');
@@ -48,13 +61,13 @@ const ReminderModal = ({ isOpen, onClose, onSave, itemTitle }) => {
     useEffect(() => {
         if (isOpen) {
             const now = new Date();
-            const yyyy = now.getFullYear();
-            const mm = String(now.getMonth() + 1).padStart(2, '0');
-            const dd = String(now.getDate()).padStart(2, '0');
-            const hh = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            setDate(`${yyyy}-${mm}-${dd}`);
-            setTime(`${hh}:${min}`);
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            setDate(`${year}-${month}-${day}`);
+            setTime(`${hours}:${minutes}`);
         }
     }, [isOpen]);
 
@@ -98,163 +111,163 @@ const ReminderModal = ({ isOpen, onClose, onSave, itemTitle }) => {
     );
 };
 
-
 // --- LibraryPage 주 컴포넌트 ---
 const LibraryPage = () => {
     // --- 상태(State) 선언 ---
     const [libraryItems, setLibraryItems] = useState([]);
-    const [selectedLibraryItem, setSelectedLibraryItem] = useState(null);
     const [librarySearchTerm, setLibrarySearchTerm] = useState('');
     const [libraryFilterTag, setLibraryFilterTag] = useState('');
     const [isSearching, setIsSearching] = useState(true);
+    const [selectedItemId, setSelectedItemId] = useState(null); // ID만 저장
+
+    // 모달 및 기타 상태
     const [showMessageModal, setShowMessageModal] = useState(false);
     const [messageModalContent, setMessageModalContent] = useState('');
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [reminderItem, setReminderItem] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
-    // --- 데이터 조회 (검색 및 필터링 포함) ---
+    // 통계 관련 상태
+    const [tagStatsData, setTagStatsData] = useState([]);
+    const [tagChartData, setTagChartData] = useState([]);
+    const [showTagStats, setShowTagStats] = useState(false);
+    const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98FB98', '#DA70D6', '#FFD700'];
+
+    const getAuthHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` } });
+
+    // --- 통계 데이터 조회 함수 ---
+    const fetchTagStats = useCallback(async () => {
+        try {
+            const res = await axios.get('http://localhost:8080/api/library/stat/tags', getAuthHeader());
+            setTagStatsData(res.data.data.map(item => ({ name: item.tag, value: item.count })));
+        } catch (err) { console.error('❌ 태그 통계 조회 실패:', err); }
+    }, []);
+
+    // --- 라이브러리 목록 조회 (검색 및 필터링) ---
     useEffect(() => {
         const fetchLibraryItems = async () => {
             setIsSearching(true);
             try {
                 let url = 'http://localhost:8080/api/library';
                 const params = new URLSearchParams();
-
                 if (librarySearchTerm) params.append('title', librarySearchTerm);
                 if (libraryFilterTag) params.append('tags', libraryFilterTag);
+                if (params.toString()) url = `http://localhost:8080/api/library/search?${params.toString()}`;
 
-                if (params.toString()) {
-                    url = `http://localhost:8080/api/library/search?${params.toString()}`;
-                }
-
-                const res = await axios.get(url, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
-                });
-
-                const formattedItems = res.data.data.map(item => ({
+                const res = await axios.get(url, getAuthHeader());
+                setLibraryItems(res.data.data.map(item => ({
                     id: item.library_id,
                     title: item.video_title,
                     hashtags: item.tags,
                     date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
                     userNotes: item.user_notes,
                     thumbnail: getYoutubeThumbnailUrl(getYoutubeIdFromUrl(item.original_url)),
-                    uploader: '알 수 없음',
-                    views: 'N/A',
+                    uploader: '정보 없음',
+                    views: '정보 없음',
                     summary: '상세 정보를 보려면 클릭하세요.',
                     original_url: item.original_url,
-                    youtube_id: getYoutubeIdFromUrl(item.original_url),
-                }));
-                setLibraryItems(formattedItems);
+                })));
+                fetchTagStats();
+            } catch (err) { console.error('❌ 라이브러리 조회 실패:', err); }
+            finally { setIsSearching(false); }
+        };
+        const handler = setTimeout(fetchLibraryItems, 300);
+        return () => clearTimeout(handler);
+    }, [librarySearchTerm, libraryFilterTag, fetchTagStats]);
 
-            } catch (err) {
-                console.error('❌ 라이브러리 조회 실패:', err);
-                setMessageModalContent('라이브러리 목록을 불러오는 데 실패했습니다.');
-                setShowMessageModal(true);
-            } finally {
-                setIsSearching(false);
+    // --- 통계 데이터를 차트용 데이터로 가공 ---
+    useEffect(() => {
+        if (tagStatsData.length === 0) { setTagChartData([]); return; }
+        const totalCount = tagStatsData.reduce((sum, tag) => sum + tag.value, 0);
+        if (totalCount === 0) { setTagChartData([]); return; }
+        let otherSum = 0;
+        let processedChartData = [];
+        tagStatsData.forEach(tag => {
+            if ((tag.value / totalCount) < 0.05) otherSum += tag.value;
+            else processedChartData.push(tag);
+        });
+        processedChartData.sort((a, b) => b.value - a.value);
+        if (otherSum > 0) processedChartData.push({ name: '기타', value: otherSum });
+        setTagChartData(processedChartData);
+    }, [tagStatsData]);
+
+    // --- 선택된 ID를 기반으로 실제 아이템 객체를 찾는 파생 상태 ---
+    const selectedLibraryItem = useMemo(() => {
+        if (!selectedItemId) return null;
+        return libraryItems.find(item => item.id === selectedItemId) || null;
+    }, [selectedItemId, libraryItems]);
+
+    // --- 상세 정보 조회 로직 (무한 루프 방지) ---
+    useEffect(() => {
+        const fetchDetailIfNeeded = async () => {
+            if (selectedItemId && selectedLibraryItem && selectedLibraryItem.summary === '상세 정보를 보려면 클릭하세요.') {
+                try {
+                    const res = await axios.get(`http://localhost:8080/api/library/${selectedItemId}`, getAuthHeader());
+                    const detailedData = res.data.data;
+                    setLibraryItems(prevItems =>
+                        prevItems.map(item =>
+                            item.id === selectedItemId
+                                ? { ...item,
+                                    summary: detailedData.summary_text,
+                                    uploader: detailedData.uploader_name,
+                                    views: detailedData.view_count,
+                                }
+                                : item
+                        )
+                    );
+                } catch (err) {
+                    console.error(`❌ 상세 조회 실패 (ID: ${selectedItemId}):`, err);
+                    setMessageModalContent('상세 정보 로딩에 실패했습니다.');
+                    setShowMessageModal(true);
+                    setSelectedItemId(null);
+                }
             }
         };
+        fetchDetailIfNeeded();
+    }, [selectedItemId, selectedLibraryItem]);
 
-        const handler = setTimeout(fetchLibraryItems, 300); // 디바운싱
-        return () => clearTimeout(handler);
-    }, [librarySearchTerm, libraryFilterTag]);
-
-    // --- 상세 정보 조회 ---
-    const handleSelectLibraryItem = useCallback(async (itemId) => {
-        // 이미 상세 정보가 로드된 경우 다시 로드하지 않음
-        const currentItem = libraryItems.find(item => item.id === itemId);
-        if (currentItem && currentItem.summary !== '상세 정보를 보려면 클릭하세요.') {
-            setSelectedLibraryItem(currentItem);
-            return;
-        }
-
-        try {
-            const res = await axios.get(`http://localhost:8080/api/library/${itemId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-            });
-
-            const detailedItem = res.data.data;
-            const fullDetailedItem = {
-                id: detailedItem.library_id,
-                summary: detailedItem.summary_text,
-                thumbnail: getYoutubeThumbnailUrl(detailedItem.youtube_id),
-                uploader: detailedItem.uploader_name,
-                views: detailedItem.view_count,
-                original_url: detailedItem.original_url,
-                userNotes: detailedItem.user_notes,
-                hashtags: detailedItem.tags,
-                title: detailedItem.video_title,
-                youtube_id: detailedItem.youtube_id,
-                date: new Date(detailedItem.saved_at).toLocaleDateString('ko-KR'),
-            };
-
-            // 전체 목록의 해당 아이템 정보도 업데이트
-            setLibraryItems(prev => prev.map(item => item.id === itemId ? fullDetailedItem : item));
-            setSelectedLibraryItem(fullDetailedItem);
-
-        } catch (err) {
-            console.error(`❌ 라이브러리 상세 조회 실패:`, err);
-            setMessageModalContent('상세 정보 로딩에 실패했습니다.');
-            setShowMessageModal(true);
-        }
-    }, [libraryItems]);
-
-    // --- 메모 저장 ---
     const handleSaveUserNotes = async (itemId, notes) => {
         try {
-            await axios.patch('http://localhost:8080/api/library/note',
-                { user_library_id: itemId, user_notes: notes },
-                { headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` } }
-            );
+            await axios.patch('http://localhost:8080/api/library/note', { user_library_id: itemId, user_notes: notes }, getAuthHeader());
             setMessageModalContent('메모가 성공적으로 저장되었습니다!');
             setShowMessageModal(true);
             setLibraryItems(prev => prev.map(item => item.id === itemId ? { ...item, userNotes: notes } : item));
-            if (selectedLibraryItem && selectedLibraryItem.id === itemId) {
-                setSelectedLibraryItem(prev => ({ ...prev, userNotes: notes }));
-            }
         } catch (err) {
-            console.error('❌ 메모 저장 실패:', err);
             setMessageModalContent('메모 저장에 실패했습니다.');
             setShowMessageModal(true);
         }
     };
 
-    // --- 아이템 삭제 ---
     const handleDeleteLibraryItem = async (itemId) => {
         if (!window.confirm('정말로 이 요약본을 삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`http://localhost:8080/api/library/${itemId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-            });
+            await axios.delete(`http://localhost:8080/api/library/${itemId}`, getAuthHeader());
             setMessageModalContent('요약본이 성공적으로 삭제되었습니다!');
             setShowMessageModal(true);
             setLibraryItems(prev => prev.filter(item => item.id !== itemId));
-            setSelectedLibraryItem(null);
+            setSelectedItemId(null); // 삭제 후 상세 보기 창 닫기
+            fetchTagStats(); // 삭제 후 통계 다시 불러오기
         } catch (err) {
-            console.error('❌ 요약본 삭제 실패:', err);
             setMessageModalContent('삭제 중 오류가 발생했습니다.');
             setShowMessageModal(true);
         }
     };
 
-    // --- 리마인더 모달 열기 ---
     const handleSetReminder = (item) => {
-        if (!item || typeof item !== 'object') {
-            setMessageModalContent("리마인더를 설정할 아이템 정보가 올바르지 않습니다.");
-            setShowMessageModal(true);
-            return;
-        }
         setReminderItem(item);
         setIsReminderModalOpen(true);
     };
 
-    // --- 리마인더 저장 및 AI 추천 생성 ---
     const handleSaveReminder = async (reminderSettings) => {
         if (!reminderItem) return;
+        setIsReminderModalOpen(false);
+        setIsGenerating(true);
+
         const userId = parseInt(localStorage.getItem('userId'), 10);
         if (!userId) {
             setMessageModalContent('사용자 정보를 찾을 수 없습니다.');
             setShowMessageModal(true);
+            setIsGenerating(false); // 로딩 종료
             return;
         }
 
@@ -266,27 +279,16 @@ const LibraryPage = () => {
         };
 
         try {
-            // 1. 리마인더 저장 API 호출
-            await axios.post('http://localhost:8080/api/reminder', payload, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
-            });
+            await axios.post('http://localhost:8080/api/reminder', payload, getAuthHeader());
 
-            // 2. AI 추천 생성 API 호출
             let recommendationMessage = "\n\n하지만 추천 영상 생성에는 실패했습니다.";
             try {
-                // 백엔드 AI 추천 엔드포인트가 '라이브러리 ID'를 기반으로 추천을 생성하고 저장까지 처리한다고 가정
-                await axios.post(`http://localhost:8080/api/recommendation/ai/${reminderItem.id}`, {}, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-                });
+                await axios.post(`http://localhost:8080/api/recommendation/ai/${reminderItem.id}`, {}, getAuthHeader());
                 recommendationMessage = "\n\n또한, 5개의 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
-            } catch (recError) {
-                console.error("❌ 추천 영상 생성 API 호출 실패:", recError);
-            }
+            } catch (recError) { console.error("❌ 추천 영상 생성 API 호출 실패:", recError); }
 
             setMessageModalContent(`리마인더가 성공적으로 설정되었습니다!${recommendationMessage}`);
-
         } catch (err) {
-            console.error('❌ 리마인더 또는 추천 생성 중 오류:', err);
             setMessageModalContent(`오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
         } finally {
             setIsReminderModalOpen(false);
@@ -295,13 +297,12 @@ const LibraryPage = () => {
         }
     };
 
-
     return (
         <div className="max-w-7xl mx-auto space-y-8">
             <UserLibrary
                 libraryItems={libraryItems}
                 selectedLibraryItem={selectedLibraryItem}
-                setSelectedLibraryItem={handleSelectLibraryItem}
+                setSelectedLibraryItem={setSelectedItemId} // 목록에서는 ID를, 닫을때는 null을 설정
                 handleSaveUserNotes={handleSaveUserNotes}
                 handleDeleteLibraryItem={handleDeleteLibraryItem}
                 handleSetReminder={handleSetReminder}
@@ -310,24 +311,16 @@ const LibraryPage = () => {
                 libraryFilterTag={libraryFilterTag}
                 setLibraryFilterTag={setLibraryFilterTag}
                 isSearching={isSearching}
-                // 태그 통계 관련 props가 필요하다면 여기에 추가
+                tagChartData={tagChartData}
+                showTagStats={showTagStats}
+                setShowTagStats={setShowTagStats}
+                COLORS={COLORS}
             />
 
-            {showMessageModal && (
-                <MessageModal
-                    message={messageModalContent}
-                    onClose={() => setShowMessageModal(false)}
-                />
-            )}
+            {isGenerating && <LoadingModal message="리마인더 저장 & 추천 영상 생성 중..." />}
 
-            {isReminderModalOpen && reminderItem && (
-                <ReminderModal
-                    isOpen={isReminderModalOpen}
-                    onClose={() => setIsReminderModalOpen(false)}
-                    onSave={handleSaveReminder}
-                    itemTitle={reminderItem.title}
-                />
-            )}
+            {showMessageModal && (<MessageModal message={messageModalContent} onClose={() => setShowMessageModal(false)} />)}
+            {isReminderModalOpen && reminderItem && (<ReminderModal isOpen={isReminderModalOpen} onClose={() => setIsReminderModalOpen(false)} onSave={handleSaveReminder} itemTitle={reminderItem.title} />)}
         </div>
     );
 };
