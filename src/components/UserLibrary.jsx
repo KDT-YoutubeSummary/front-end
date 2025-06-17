@@ -1,6 +1,8 @@
 // src/components/UserLibrary.jsx
 
 import React, { useState, useEffect } from 'react';
+// react-markdown 라이브러리를 사용합니다.
+import ReactMarkdown from 'react-markdown';
 import { Search, Eye, Calendar, Hash, Edit, Trash2, Bell, Lightbulb, X, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
@@ -8,37 +10,19 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
  * UserLibrary Component
  * Displays user's video library UI (search, filter, list, detail view).
  * Data and handlers are passed as props from a parent container (e.g., LibraryPage).
- * @param {object} props - Component props.
- * @param {Array<object>} props.libraryItems - Currently displayed (filtered) list of summarized video items.
- * @param {object|null} props.selectedLibraryItem - The currently selected item's *detailed* data for detail view.
- * @param {function} props.setSelectedLibraryItem - Function to set the selected item's ID (or null to go back).
- * @param {function} props.handleSaveUserNotes - Function to save user notes to backend.
- * @param {function} props.handleDeleteLibraryItem - Function to delete a library item from backend.
- * @param {function} props.handleSetReminder - Function to open reminder modal for an item.
- * @param {string} props.librarySearchTerm - Current search term for library.
- * @param {function} props.setLibrarySearchTerm - Function to set library search term.
- * @param {string} props.libraryFilterTag - Current filter tag for library.
- * @param {function} props.setLibraryFilterTag - Function to set library filter tag.
- * @param {Array<object>} props.tagChartData - Data for tag statistics from API.
- * @param {boolean} props.showTagStats - Whether to show tag statistics.
- * @param {function} props.setShowTagStats - Function to toggle tag statistics.
- * @param {Array<string>} props.COLORS - Colors for charts.
- * @param {boolean} props.isSearching - Indicates if search/fetch is in progress.
  */
-
-// 사용자의 비디오 라이브러리 UI를 표시합니다 (검색, 필터, 목록, 상세 보기).
 const UserLibrary = ({
                          libraryItems,
                          selectedLibraryItem,
                          setSelectedLibraryItem,
-                         handleSaveUserNotes, // props로 받음
-                         handleDeleteLibraryItem, // props로 받음
+                         handleSaveUserNotes,
+                         handleDeleteLibraryItem,
                          handleSetReminder,
                          librarySearchTerm,
                          setLibrarySearchTerm,
                          libraryFilterTag,
                          setLibraryFilterTag,
-                         tagChartData, // props로 받음
+                         tagChartData,
                          showTagStats,
                          setShowTagStats,
                          COLORS,
@@ -88,8 +72,6 @@ const UserLibrary = ({
                         </div>
                         <div className="flex space-x-2 flex-shrink-0">
                             <button
-                                // ✨✨✨ 오류 수정 부분 ✨✨✨
-                                // handleSetReminder 함수에 현재 선택된 아이템(selectedLibraryItem) 객체 전체를 전달합니다.
                                 onClick={() => handleSetReminder(selectedLibraryItem)}
                                 className="p-3 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors transform hover:scale-110"
                                 title="리마인더 설정"
@@ -130,13 +112,17 @@ const UserLibrary = ({
                         </div>
                     </div>
 
-                    {/* Summary Content */}
+                    {/* ✨✨✨ 수정된 부분 ✨✨✨ */}
                     <div className="p-6">
                         <h4 className="text-lg font-semibold text-gray-800 mb-4">
                             요약 내용
                         </h4>
-                        <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed">
-                            {selectedLibraryItem.summary}
+                        {/* div 태그 대신 ReactMarkdown 컴포넌트를 사용합니다.
+                          TailwindCSS의 'prose' 클래스는 마크다운 렌더링 결과물에
+                          자동으로 아름다운 스타일(굵기, 목록, 간격 등)을 적용해주는 유용한 클래스입니다.
+                        */}
+                        <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                            <ReactMarkdown>{selectedLibraryItem.summary}</ReactMarkdown>
                         </div>
                     </div>
 
@@ -281,21 +267,11 @@ const UserLibrary = ({
                 </div>
             )}
             <style>{`
-              .animate-fade-in-up {
-                animation: fade-in-up 0.4s ease-out forwards;
-              }
-              .animate-fade-in {
-                animation: fade-in 0.5s ease-out forwards;
-              }
+              .animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
+              .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
               @keyframes fade-in-up {
-                from {
-                  opacity: 0;
-                  transform: translateY(20px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateY(0);
-                }
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
               }
               @keyframes fade-in {
                 from { opacity: 0; }
