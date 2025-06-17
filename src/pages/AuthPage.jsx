@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 
-// AuthPage는 이제 독립적인 페이지 컴포넌트이므로,
-// 페이지 전체를 채우는 스타일을 다시 적용하고,
-// 스크롤이 생기지 않도록 overflow를 제어하며 컴포넌트 크기를 조정합니다.
 const AuthPage = ({ onLogin, onSignup, onMessage }) => {
     const [mode, setMode] = useState('login'); // 'login' or 'signup'
-    const [username, setUsername] = useState(''); // 로그인 시 사용할 아이디 (유저네임)
-    const [email, setEmail] = useState(''); // 회원가입 시 이메일
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState(''); // 회원가입 시 비밀번호 확인
-    const [localMessage, setLocalMessage] = useState(''); // AuthPage 내부 메시지
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [localMessage, setLocalMessage] = useState('');
+
+
+    const GOOGLE_LOGIN_URL = 'http://localhost:8080/oauth2/authorization/google';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLocalMessage(''); // 이전 메시지 초기화
+        setLocalMessage('');
 
         if (mode === 'signup' && password !== confirmPassword) {
             setLocalMessage('비밀번호가 일치하지 않습니다.');
@@ -22,154 +22,78 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
 
         try {
             if (mode === 'login') {
-                // 로그인 시에는 username과 password만 전달
                 await onLogin(username, password);
-                // 로그인 성공 시 App.jsx에서 페이지 전환 처리
-            } else { // signup
-                // 회원가입 시에는 username, password, email 모두 전달
+            } else {
                 await onSignup(username, password, email);
-                // 회원가입 성공 후 메시지를 띄우고 로그인 모드로 전환
                 setLocalMessage('회원가입 성공! 이제 로그인해주세요.');
                 setMode('login');
-                setUsername(''); setEmail(''); setPassword(''); setConfirmPassword(''); // 필드 초기화
+                setUsername(''); setEmail(''); setPassword(''); setConfirmPassword('');
             }
         } catch (error) {
-            // App.jsx의 onLogin/onSignup에서 이미 에러 메시지를 처리하고 있으므로
-            // 여기서는 onMessage(error.message) 등을 호출하여 App.jsx의 메시지 모달을 사용.
-            onMessage(error.message); // 전역 메시지 모달 사용
+            onMessage(error.message);
         }
     };
 
     return (
-        // AuthPage를 페이지 콘텐츠 영역에 맞춰 전체 높이를 채우고 중앙 정렬합니다.
-        // min-h-[calc(100vh-80px)]: 헤더 높이를 제외한 뷰포트 높이의 최소값을 설정합니다.
-        // bg-gray-50: 페이지 배경색을 설정합니다.
-        // p-6: 기존에 AuthPage에 있던 패딩은 App.jsx의 메인 컨텐츠 영역에서 관리하므로 제거합니다.
-        // overflow-hidden: 이 컴포넌트 자체 내에서 스크롤이 생기지 않도록 합니다.
-        //                  (내용이 넘칠 경우 잘리게 되므로, 내부 콘텐츠를 잘 조절해야 합니다.)
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] bg-gray-50 overflow-hidden">
-            <div className="bg-white rounded-xl shadow-xl p-8 max-w-xl w-full"> {/* max-w-lg -> max-w-xl로 변경하여 컴포넌트 크기를 키웁니다. */}
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-                    {mode === 'login' ? '로그인' : '회원가입'}
-                </h2>
-                {localMessage && (
-                    <p className="text-red-500 text-sm text-center mb-4">{localMessage}</p>
-                )}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* 로그인/회원가입 공통: 아이디 (유저네임) */}
-                    <div>
-                        <label htmlFor="auth-username" className="block text-gray-700 mb-1">아이디</label>
-                        <input
-                            id="auth-username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
-                        />
-                    </div>
-                    {/* 회원가입 시에만 이메일 필드 */}
-                    {mode === 'signup' && (
-                        <div>
-                            <label htmlFor="auth-email" className="block text-gray-700 mb-1">이메일</label>
-                            <input
-                                id="auth-email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
-                            />
-                        </div>
-                    )}
-                    {/* 로그인/회원가입 공통: 비밀번호 */}
-                    <div>
-                        <label htmlFor="auth-password" className="block text-gray-700 mb-1">비밀번호</label>
-                        <input
-                            id="auth-password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
-                        />
-                    </div>
-                    {/* 회원가입 시에만 비밀번호 확인 필드 */}
-                    {mode === 'signup' && (
-                        <div>
-                            <label htmlFor="auth-confirm-password" className="block text-gray-700 mb-1">비밀번호 확인</label>
-                            <input
-                                id="auth-confirm-password"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
-                            />
-                        </div>
-                    )}
-                    <button
-                        type="submit"
-                        className="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors transform hover:scale-105 shadow-md"
-                    >
-                        {mode === 'login' ? '로그인' : '회원가입'}
-                    </button>
-                </form>
-                <div className="mt-4 text-center text-sm text-gray-600 space-y-3">
-                    {mode === 'login' ? (
-                        <p>
-                            아직 계정이 없으신가요?{' '}
-                            <button
-                                type="button"
-                                className="text-red-500 hover:underline font-semibold"
-                                onClick={() => {
-                                    setMode('signup');
-                                    setLocalMessage('');
-                                    setUsername(''); setEmail(''); setPassword(''); setConfirmPassword('');
-                                }}
-                            >
-                                회원가입하기
-                            </button>
-                        </p>
-                    ) : (
-                        <p>
-                            이미 계정이 있으신가요?{' '}
-                            <button
-                                type="button"
-                                className="text-red-500 hover:underline font-semibold"
-                                onClick={() => {
-                                    setMode('login');
-                                    setLocalMessage('');
-                                    setUsername(''); setEmail(''); setPassword(''); setConfirmPassword('');
-                                }}
-                            >
-                                로그인하기
-                            </button>
-                        </p>
-                    )}
-                    {/* 소셜 로그인 버튼 추가 (현재는 더미) */}
-                    <div className="relative flex items-center justify-center">
-                        <div className="flex-grow border-t border-gray-300"></div>
-                        <span className="flex-shrink mx-4 text-gray-500">또는</span>
-                        <div className="flex-grow border-t border-gray-300"></div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => onMessage('구글 로그인 기능은 현재 준비 중입니다.')}
-                        className="w-full bg-blue-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2 transform hover:scale-105 shadow-md"
-                    >
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.0003 4.40273C14.1207 4.40273 15.8385 5.18457 17.0766 6.42266L20.0607 3.43852C17.9102 1.28796 15.1221 0 12.0003 0C7.2753 0 3.19799 2.76673 1.15942 6.80436L4.85646 9.60037C5.74837 7.95473 7.84275 6.80436 12.0003 6.80436C12.0003 6.80436 12.0003 4.40273 12.0003 4.40273Z" fill="#EA4335"/><path d="M23.9996 12.164C23.9996 11.3283 23.9312 10.6022 23.8277 9.87786H12.2402V14.1951H18.9958C18.8471 15.0211 18.2321 16.2778 17.0543 17.0272L20.7303 19.8601C22.9555 17.8465 24.0003 14.8878 24.0003 12.164H23.9996V12.164Z" fill="#4285F4"/><path d="M12.2402 24.0004C15.3259 24.0004 17.9405 22.9234 19.8166 21.0544L16.1406 18.2215C15.1118 18.8687 13.8236 19.2825 12.2402 19.2825C8.80998 19.2825 5.96109 17.1641 4.88569 13.8437L1.17383 16.6491C3.12328 20.6559 7.37559 24.0004 12.2402 24.0004Z" fill="#34A853"/><path d="M1.17383 6.80436L4.88569 9.60037C4.69343 10.2372 4.58611 10.9065 4.58611 11.5973C4.58611 12.2882 4.69343 12.9575 4.88569 13.5944L1.15942 16.8044C0.419139 15.3524 0 13.8058 0 12.164C0 10.5222 0.419139 8.97559 1.15942 7.52358L1.17383 6.80436Z" fill="#FBBC04"/></svg>
-                        <span>Google로 로그인</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => onMessage('카카오 로그인 기능은 현재 준비 중입니다.')}
-                        className="w-full bg-yellow-400 text-gray-800 py-3 px-6 rounded-lg font-bold hover:bg-yellow-500 transition-colors flex items-center justify-center space-x-2 transform hover:scale-105 shadow-md"
-                    >
-                        <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink_btn_small.png" alt="Kakao Icon" className="h-5 w-5" />
-                        <span>카카오로 로그인</span>
-                    </button>
+        // 이 컴포넌트는 이제 AuthModal 안에서 렌더링되므로, 페이지 전체 스타일은 필요 없습니다.
+        <div className="w-full">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                {mode === 'login' ? '로그인' : '회원가입'}
+            </h2>
+            {localMessage && (
+                <p className="text-red-500 text-sm text-center mb-4">{localMessage}</p>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {/* 아이디, 이메일, 비밀번호 입력 필드... (이전과 동일) */}
+                <div>
+                    <label htmlFor="auth-username" className="block text-gray-700 mb-1">아이디</label>
+                    <input id="auth-username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
                 </div>
+                {mode === 'signup' && (
+                    <div>
+                        <label htmlFor="auth-email" className="block text-gray-700 mb-1">이메일</label>
+                        <input id="auth-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                    </div>
+                )}
+                <div>
+                    <label htmlFor="auth-password" className="block text-gray-700 mb-1">비밀번호</label>
+                    <input id="auth-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                </div>
+                {mode === 'signup' && (
+                    <div>
+                        <label htmlFor="auth-confirm-password" className="block text-gray-700 mb-1">비밀번호 확인</label>
+                        <input id="auth-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                    </div>
+                )}
+                <button type="submit" className="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                    {mode === 'login' ? '로그인' : '회원가입'}
+                </button>
+            </form>
+            <div className="mt-4 text-center text-sm text-gray-600 space-y-3">
+                {/* 모드 전환 버튼 (이전과 동일) */}
+                <p>
+                    {mode === 'login' ? '아직 계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
+                    <button type="button" className="text-red-500 hover:underline font-semibold" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
+                        {mode === 'login' ? '회원가입하기' : '로그인하기'}
+                    </button>
+                </p>
+
+                <div className="relative flex items-center justify-center">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="flex-shrink mx-4 text-gray-500">또는</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                </div>
+
+                {/* ✨✨✨ 수정된 구글 로그인 버튼 ✨✨✨ */}
+                <a
+                    href={GOOGLE_LOGIN_URL}
+                    className="w-full bg-white text-gray-700 py-3 px-6 rounded-lg font-semibold border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"
+                >
+                    <svg className="h-5 w-5" viewBox="0 0 48 48">
+                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.99,35.508,44,30.026,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
+                    </svg>
+                    <span>Google 계정으로 로그인</span>
+                </a>
             </div>
         </div>
     );
