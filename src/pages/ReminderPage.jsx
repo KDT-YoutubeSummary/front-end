@@ -22,7 +22,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
 
     // --- Constants ---
     const reminderTimesOptions = ['30분 후', '1시간 후', '2시간 후', '내일 같은 시간'];
-    const reminderIntervalsOptions = ['1일마다', '3일마다', '1주마다', '1달마다'];
+    const reminderIntervalsOptions = ['반복하지 않음', '1일마다', '3일마다', '1주마다', '1달마다'];
 
     // 리마인더 삭제 핸들러
     const handleDeleteReminder = async (reminderId) => {
@@ -50,7 +50,10 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
             let frequencyInterval = 1;
 
             // reminderInterval 값에 따라 타입과 간격 설정
-            if (interval.includes('일마다')) {
+            if (interval === '반복하지 않음') {
+                reminderType = 'ONE_TIME';
+                frequencyInterval = 1;
+            } else if (interval.includes('일마다')) {
                 reminderType = 'DAILY';
                 frequencyInterval = parseInt(interval);
             } else if (interval.includes('주마다')) {
@@ -159,7 +162,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     // 리마인더 주기 포맷팅 함수
     const formatReminderInterval = (reminderType, interval) => {
         if (reminderType === 'ONE_TIME') {
-            return '한 번만';
+            return '반복하지 않음';
         } else if (reminderType === 'DAILY') {
             return `${interval}일마다`;
         } else if (reminderType === 'WEEKLY') {
