@@ -3,17 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Mail, Trash2, User as UserIcon, Play, Edit } from 'lucide-react';
 import { ProfileEditModal, DeleteAccountModal, MessageModal, ReauthModal } from '../components/MyPageModals';
 
-/**
- * My Page Component
- * Displays user profile, allows email/password/ID changes, account deletion, and shows recent activity.
- * @param {object} props - Component props.
- * @param {boolean} props.isLoggedIn - App.jsx에서 관리하는 로그인 상태 (API 호출 조건에 사용).
- * @param {function} props.onUpdateGlobalUserDisplay - 프로필 정보 변경 시 App.jsx의 전역 사용자 표시를 업데이트하는 콜백.
- * @param {function} props.onShowMessage - App.jsx의 MessageModal을 띄우는 콜백 (message, isConfirm, onConfirm).
- * @param {function} props.onShowReauthModal - App.jsx의 ReauthModal을 띄우는 콜백.
- * @param {function} props.onSetReauthCallback - App.jsx의 ReauthModal의 콜백을 설정하는 콜백.
- * @param {function} props.onUserLoggedOut - 회원 탈퇴 성공 시 App.jsx에 로그아웃을 알리는 콜백.
- */
+
 const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowReauthModal, onSetReauthCallback, onUserLoggedOut }) => {
     // MyPage 내부에서 관리할 상태들
     const [userId, setUserId] = useState(''); // 사용자 ID (백엔드 userName)
@@ -119,10 +109,6 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
             if (newPassword) { // 새 비밀번호가 입력된 경우에만 추가
                 requestBody.password = newPassword; // 백엔드가 'password' 필드를 새 비밀번호로 기대
             }
-            // 현재 비밀번호(currentPassword)는 인증을 위해 사용되며,
-            // 백엔드가 별도의 필드를 요구하지 않는다면 Authorization 헤더로 인증되는 것으로 가정
-            // 만약 백엔드가 body에 'currentPassword' 필드를 요구한다면, requestBody에 추가해야 함.
-            // requestBody.currentPassword = currentPassword; // 필요한 경우 추가
 
             console.log("MyPage: 프로필 업데이트 요청 본문:", requestBody);
 

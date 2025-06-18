@@ -84,7 +84,7 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
 
-                {/* ✨✨✨ 수정된 구글 로그인 버튼 ✨✨✨ */}
+                {/*  구글 로그인 버튼 */}
                 <a
                     href={GOOGLE_LOGIN_URL}
                     className="w-full bg-white text-gray-700 py-3 px-6 rounded-lg font-semibold border border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"

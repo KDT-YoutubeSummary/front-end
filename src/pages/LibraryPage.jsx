@@ -1,5 +1,3 @@
-// src/pages/LibraryPage.jsx
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import UserLibrary from '../components/UserLibrary.jsx';
