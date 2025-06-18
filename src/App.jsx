@@ -519,6 +519,11 @@ function App() {
                             onGenerateRecommendation={handleGenerateRecommendation}
                             libraryItemsCount={3} // 더미 데이터 - 실제로는 LibraryPage에서 전달받아야 함
                             onNavigateToLibrary={handleNavigateToLibrary} // 라이브러리 페이지로 이동하는 함수 전달
+                            userId={userId} // API 호출에 필요한 사용자 ID 전달
+                            setRecommendedVideo={setRecommendedVideo} // 추천 영상 상태 업데이트 함수 전달
+                            setIsGeneratingRecommendation={setIsGeneratingRecommendation} // 로딩 상태 업데이트 함수 전달
+                            setMessageModalContent={setMessageModalContent} // 메시지 모달 내용 설정 함수 전달
+                            setShowMessageModal={setShowMessageModal} // 메시지 모달 표시 함수 전달
                         />
                     )}
 

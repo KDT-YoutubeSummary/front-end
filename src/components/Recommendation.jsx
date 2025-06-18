@@ -25,7 +25,7 @@ const Recommendation = ({ recommendation }) => {
                     className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
                 >
                     <Play className="h-4 w-4 mr-1" />
-                    영상 보기 (목업 URL)
+                    영상 보기
                 </a>
             )}
         </div>
