@@ -12,6 +12,8 @@ import { X, Clock, Repeat } from 'lucide-react';
  * @param {Array<string>} props.reminderTimes - Options for reminder time.
  * @param {Array<string>} props.reminderIntervals - Options for reminder interval.
  */
+
+// TODO: 알림 시간을 얼마 뒤가 아닌, 특정 시간을 지정하도록 변경
 const ReminderEditModal = ({ reminder, onClose, onSave, reminderTimes, reminderIntervals }) => {
     const [editNotes, setEditNotes] = useState(reminder.reminderNotes || '');
     const [editTime, setEditTime] = useState(reminder.reminderTime);
