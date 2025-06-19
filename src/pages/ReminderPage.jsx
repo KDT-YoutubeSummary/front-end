@@ -19,6 +19,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     const [editingReminder, setEditingReminder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const [isDataFetched, setIsDataFetched] = useState(false);
 
     // --- Constants ---
     const reminderTimesOptions = ['30분 후', '1시간 후', '2시간 후', '내일 같은 시간'];
@@ -137,6 +138,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
             setShowMessageModal(true);
         } finally {
             setIsLoading(false);
+            setIsDataFetched(true);
         }
     };
 
@@ -174,13 +176,6 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
         }
     };
 
-    // 사용자 로그인 시 리마인더 데이터 로드
-    useEffect(() => {
-        if (isLoggedIn && userId) {
-            fetchUserReminders();
-        }
-    }, [isLoggedIn, userId]);
-
     // Intersection Observer를 사용하여 컴포넌트가 화면에 표시될 때 감지
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -206,10 +201,11 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
 
     // 컴포넌트가 화면에 표시될 때 리마인더 데이터 다시 로드
     useEffect(() => {
-        if (isVisible && isLoggedIn && userId) {
+        if (isVisible && isLoggedIn && userId && !isDataFetched) {
+            console.log('컴포넌트가 화면에 표시됨, 리마인더 API 호출 시작');
             fetchUserReminders();
         }
-    }, [isVisible, isLoggedIn, userId]);
+    }, [isVisible, isLoggedIn, userId, isDataFetched]);
 
     const handleEditReminder = (reminder) => {
         setEditingReminder(reminder);
@@ -228,12 +224,20 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                 </div>
             )}
 
-            {reminders.length === 0 ? (
+            {reminders.length === 0 && isDataFetched ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
                     <p className="text-lg font-medium">설정된 리마인더가 없습니다.</p>
                     <p className="text-sm">라이브러리에서 요약본에 대한 리마인더를 설정해보세요.</p>
                 </div>
-            ) : (
+            ) : null}
+
+            {!isLoading && !isDataFetched && (
+                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                    <p className="text-lg font-medium">리마인더 데이터를 로드하는 중입니다...</p>
+                </div>
+            )}
+
+            {reminders.length > 0 && (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                     {reminders.map((reminder) => (
                         <Reminder

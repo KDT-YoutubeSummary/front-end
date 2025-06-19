@@ -15,6 +15,7 @@ const RecommendationPage = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [recommendedVideo, setRecommendedVideo] = useState(null);
+    const [isDataFetched, setIsDataFetched] = useState(false);
 
     // 사용자 ID를 localStorage에서 가져옴
     const userId = localStorage.getItem('userId');
@@ -71,13 +72,9 @@ const RecommendationPage = () => {
             }
         } finally {
             setIsLoading(false);
+            setIsDataFetched(true);
         }
     };
-
-    // 컴포넌트가 마운트될 때와 userId가 변경될 때 추천 영상 정보를 가져옴
-    useEffect(() => {
-        fetchRecommendations();
-    }, [userId]);
 
     // Intersection Observer를 사용하여 컴포넌트가 화면에 표시될 때 감지
     useEffect(() => {
@@ -102,6 +99,14 @@ const RecommendationPage = () => {
         };
     }, []);
 
+    // 컴포넌트가 화면에 보일 때만 API 호출하도록 수정
+    useEffect(() => {
+        if (isVisible && userId && !isDataFetched) {
+            console.log('컴포넌트가 화면에 표시됨, API 호출 시작');
+            fetchRecommendations();
+        }
+    }, [isVisible, userId, isDataFetched]);
+
     return (
         <div id="recommendation-page" className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 space-y-6 text-center">
             {/* 로딩 중 표시 */}
@@ -113,7 +118,7 @@ const RecommendationPage = () => {
             )}
 
             {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
-            {!isLoading && !recommendedVideo ? (
+            {!isLoading && !recommendedVideo && isDataFetched ? (
                 <>
                     <h3 className="text-2xl font-bold text-gray-800 mb-4">영상을 추천받으세요!</h3>
                     <p className="text-gray-600 mb-6">사용자 라이브러리에 요약본을 추가하면 <br/>요약본의 태그를 분석하여 관심사에 맞는 YouTube 동영상을 추천해 드립니다.</p>
@@ -126,6 +131,13 @@ const RecommendationPage = () => {
                     </button>
                 </>
             ) : null}
+
+            {/* 추천 영상이 로드되지 않았고, 로딩중이 아닌 경우 안내문구 표시 */}
+            {!isLoading && !recommendedVideo && !isDataFetched && (
+                <div className="py-8">
+                    <p className="text-gray-600">추천 영상 정보를 로드하는 중입니다...</p>
+                </div>
+            )}
 
             {/* Recommendation 컴포넌트 사용 */}
             {!isLoading && recommendedVideo && (
