@@ -4,9 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-// API 서비스 임포트
-import { reminderApi, recommendationApi, setAuthToken } from './services/api.jsx';
-
 // CSS 및 아이콘 임포트
 import './App.css';
 import { Home, Library, Bell, User, Play, LogOut, Lightbulb } from 'lucide-react';
