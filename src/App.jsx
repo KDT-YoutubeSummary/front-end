@@ -12,8 +12,10 @@ import { Home, Library, Bell, User, Play, LogOut, Lightbulb } from 'lucide-react
 import LibraryPage from './pages/LibraryPage.jsx';
 import MyPage from './pages/MyPage';
 import AuthPage from './pages/AuthPage.jsx';
+import SummaryPage from "./pages/SummaryPage.jsx"; // SummaryPage 임포트 확인
 import { MessageModal, ReauthModal } from './components/MyPageModals.jsx';
 import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
+
 
 // 앱의 핵심 로직을 담는 내부 컴포넌트
 function AppContent() {
@@ -30,18 +32,10 @@ function AppContent() {
     const [showReauthModal, setShowReauthModal] = useState(false);
     const [reauthCallback, setReauthCallback] = useState(null);
 
-    // 메인 페이지(요약) 상태
-    const [isLoading, setIsLoading] = useState(false);
-    const [showSummary, setShowSummary] = useState(false);
-    const [summaryType, setSummaryType] = useState('기본 요약');
-    const [userPurpose, setUserPurpose] = useState('');
-    const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [currentSummaryData, setCurrentSummaryData] = useState(null);
-    const summaryTypesOptions = ['기본 요약', '3줄 요약', '키워드 요약', '타임라인 요약'];
-
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
         try {
+            // ✅ 로그인 API 경로 확인 (주석처리된 부분)
             const response = await axios.post('http://localhost:8080/api/auth/login', { userName, password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
@@ -61,7 +55,8 @@ function AppContent() {
 
     const handleSignupSubmit = async (userName, password, email) => {
         try {
-            await axios.post('http://localhost:8080/api/auth/signup', { userName, email, password });
+            // ✅ 회원가입 API 경로 확인 (주석처리된 부분)
+            await axios.post('http://localhost:8080/api/auth/register', { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
             navigate('/login');
         } catch (error) {
@@ -84,35 +79,8 @@ function AppContent() {
         setShowMessageModal(true);
     };
 
-    const handleMainSubmit = () => {
-        if (!isLoggedIn) {
-            handleAppShowMessage("요약 기능을 사용하려면 로그인이 필요합니다.");
-            navigate('/login');
-            return;
-        }
-        setIsLoading(true);
-        setTimeout(() => {
-            const generatedSummary = {
-                thumbnail: `https://i.ytimg.com/vi/${youtubeUrl.split('v=')[1]?.substring(0, 11) || 'dQw4w9WgXcQ'}/mqdefault.jpg`,
-                title: `[자동 생성] ${youtubeUrl} 요약`, uploader: 'LearnClip AI', views: 'N/A',
-                date: new Date().toLocaleDateString('ko-KR'), hashtags: ['#AI요약', '#더미데이터'],
-                summary: `제공된 YouTube URL (${youtubeUrl})에 대한 ${summaryType} 결과입니다. 사용자 목적: "${userPurpose}".`
-            };
-            setCurrentSummaryData(generatedSummary);
-            setIsLoading(false);
-            setShowSummary(true);
-        }, 1500);
-    };
-
-    const resetToInitial = () => {
-        setShowSummary(false);
-        setCurrentSummaryData(null);
-        setYoutubeUrl('');
-        setUserPurpose('');
-        setSummaryType('기본 요약');
-    };
-
-    // 페이지 이동 시마다 로그인 상태를 다시 확인
+    // --- useEffects ---
+    // 페이지 이동 시마다 로그인 상태를 다시 확인 (소셜 로그인 리다이렉트 포함)
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
         if (token) {
@@ -122,30 +90,14 @@ function AppContent() {
             setIsLoggedIn(false);
             setGlobalUserName('Guest');
         }
-    }, [location.key]);
 
-    // ✨ 2. 소셜 로그인 성공 메시지를 표시하기 위한 useEffect를 추가합니다.
-    useEffect(() => {
-        // 페이지 이동 후 전달받은 상태(state)에 loginSuccess가 true로 설정되어 있는지 확인합니다.
+        // 소셜 로그인 성공 메시지 처리
         if (location.state?.loginSuccess) {
             handleAppShowMessage("로그인이 완료되었습니다!");
             // 메시지를 표시한 후에는, 페이지를 새로고침해도 메시지가 다시 뜨지 않도록 state를 초기화합니다.
-            // 현재 경로를 유지하되 state만 비우고, 이 변경은 브라우저 히스토리에 남기지 않습니다 (replace: true).
             navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state, navigate]); // location.state가 변경될 때마다 이 효과를 실행합니다.
-
-    // 페이지 이동 시마다 로그인 상태를 다시 확인하는 useEffect (기존과 동일)
-    useEffect(() => {
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-            setIsLoggedIn(true);
-            setGlobalUserName(localStorage.getItem('username') || 'User');
-        } else {
-            setIsLoggedIn(false);
-            setGlobalUserName('Guest');
-        }
-    }, [location.key]);
+    }, [location.key, location.state, navigate]); // location.key, location.state, navigate가 변경될 때마다 실행
 
     const menuItems = [
         { id: 'main', path: '/', icon: Home, label: '요약 페이지' },
@@ -207,24 +159,13 @@ function AppContent() {
                 </header>
                 <main className="flex-1 overflow-y-auto p-8 bg-gray-100">
                     <Routes>
-                        <Route path="/" element={
-                            !showSummary ? (
-                                <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-                                    <div><label className="block font-semibold text-gray-700 mb-2">요약 타입</label><select value={summaryType} onChange={(e) => setSummaryType(e.target.value)} className="w-full p-3 border rounded-lg">{summaryTypesOptions.map(type => <option key={type} value={type}>{type}</option>)}</select></div>
-                                    <div><label className="block font-semibold text-gray-700 mb-2">사용자 목적 (선택사항)</label><textarea value={userPurpose} onChange={(e) => setUserPurpose(e.target.value)} placeholder="어떤 목적으로 이 영상을 요약하고 싶으신가요?" className="w-full p-3 border rounded-lg" rows="3"/></div>
-                                    <div><label className="block font-semibold text-gray-700 mb-2">유튜브 URL <span className="text-red-500">*</span></label><input type="url" value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="w-full p-3 border rounded-lg" /></div>
-                                    <button onClick={handleMainSubmit} disabled={isLoading} className="w-full bg-red-500 text-white py-3 rounded-lg font-bold hover:bg-red-600 disabled:opacity-50">{isLoading ? '요약 중...' : '요약 시작'}</button>
-                                </div>
-                            ) : (
-                                <div className="bg-white rounded-xl shadow-lg p-8"><h3 className="text-xl font-bold mb-4">{currentSummaryData.title}</h3><p>{currentSummaryData.summary}</p><button onClick={resetToInitial} className="mt-6 bg-gray-200 text-gray-800 py-2 px-6 rounded-lg font-bold hover:bg-gray-300">새로운 요약하기</button></div>
-                            )
-                        } />
+                        {/* ✅ SummaryPage 컴포넌트를 직접 라우팅하여 백엔드 통신 로직이 실행되도록 합니다. */}
+                        <Route path="/" element={<SummaryPage />} />
+
                         <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect />} />
                         <Route path="/reminders" element={isLoggedIn ? <div>리마인더 페이지 (구현 예정)</div> : <AuthRedirect />} />
                         <Route path="/recommendation" element={isLoggedIn ? <div>추천 페이지 (구현 예정)</div> : <AuthRedirect />} />
 
-                        {/* ✨✨✨ 문제 해결 부분 ✨✨✨ */}
-                        {/* MyPage에 `isLoggedIn` prop을 명시적으로 전달합니다. */}
                         <Route path="/mypage" element={isLoggedIn ? <MyPage isLoggedIn={isLoggedIn} onUpdateGlobalUserDisplay={setGlobalUserName} onShowMessage={handleAppShowMessage} onShowReauthModal={setShowReauthModal} onSetReauthCallback={setReauthCallback} onUserLoggedOut={handleLogout} /> : <AuthRedirect />} />
 
                         <Route path="/login" element={<AuthPage onLogin={handleLoginSubmit} onSignup={handleSignupSubmit} onMessage={handleAppShowMessage} />} />
@@ -234,7 +175,7 @@ function AppContent() {
             </div>
 
             {/* 전역 모달들 */}
-            {isLoading && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-8 rounded-lg text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div><p>요약 중입니다...</p></div></div>}
+            {/* isLoading 상태는 이제 SummaryPage 내부에서만 관리하므로 AppContent에서는 제거합니다. */}
             {showMessageModal && (<MessageModal message={messageModalContent} onClose={() => setShowMessageModal(false)} />)}
             {showReauthModal && (<ReauthModal onClose={() => setShowReauthModal(false)} onReauthenticate={(password, cb) => { if (reauthCallback) reauthCallback(password, cb); setShowReauthModal(false); }} />)}
         </div>
@@ -250,8 +191,6 @@ function AuthRedirect() {
     return null;
 }
 
-
-
 // 최종 App 컴포넌트
 function App() {
     return (
@@ -262,4 +201,3 @@ function App() {
 }
 
 export default App;
-
