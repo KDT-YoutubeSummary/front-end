@@ -167,8 +167,8 @@ function AppContent() {
                         <Route path="/" element={<SummaryPage />} />
 
                         <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect />} />
-                        <Route path="/reminders" element={isLoggedIn ? <div>리마인더 페이지 (구현 예정)</div> : <AuthRedirect />} />
-                        <Route path="/recommendation" element={isLoggedIn ? <div>추천 페이지 (구현 예정)</div> : <AuthRedirect />} />
+                        <Route path="/reminders" element={isLoggedIn ? <ReminderPage /> : <AuthRedirect />} />
+                        <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect />} />
 
                         <Route path="/mypage" element={isLoggedIn ? <MyPage isLoggedIn={isLoggedIn} onUpdateGlobalUserDisplay={setGlobalUserName} onShowMessage={handleAppShowMessage} onShowReauthModal={setShowReauthModal} onSetReauthCallback={setReauthCallback} onUserLoggedOut={handleLogout} /> : <AuthRedirect />} />
 
