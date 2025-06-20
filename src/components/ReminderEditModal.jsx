@@ -1,5 +1,5 @@
 // src/components/ReminderEditModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Clock, Repeat } from 'lucide-react';
 
 /**
@@ -9,18 +9,29 @@ import { X, Clock, Repeat } from 'lucide-react';
  * @param {object} props.reminder - The reminder object to edit.
  * @param {function} props.onClose - Function to close the modal.
  * @param {function} props.onSave - Function to save the updated reminder.
- * @param {Array<string>} props.reminderTimes - Options for reminder time.
  * @param {Array<string>} props.reminderIntervals - Options for reminder interval.
  */
-
-// TODO: 알림 시간을 얼마 뒤가 아닌, 특정 시간을 지정하도록 변경
-const ReminderEditModal = ({ reminder, onClose, onSave, reminderTimes, reminderIntervals }) => {
+const ReminderEditModal = ({ reminder, onClose, onSave, reminderIntervals }) => {
     const [editNotes, setEditNotes] = useState(reminder.reminderNotes || '');
-    const [editTime, setEditTime] = useState(reminder.reminderTime);
+    const [reminderDateTime, setReminderDateTime] = useState('');
     const [editInterval, setEditInterval] = useState(reminder.reminderInterval);
 
+    // 컴포넌트가 마운트될 때 초기 날짜 시간 설정
+    useEffect(() => {
+        // 현재 날짜와 시간으로 초기화
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+
+        const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+        setReminderDateTime(formattedDateTime);
+    }, []);
+
     const handleSave = () => {
-        onSave(reminder.id, editNotes, editTime, editInterval);
+        onSave(reminder.id, editNotes, reminderDateTime, editInterval);
     };
 
     return (
@@ -42,15 +53,12 @@ const ReminderEditModal = ({ reminder, onClose, onSave, reminderTimes, reminderI
                             <Clock className="h-4 w-4 inline mr-2 text-blue-500" />
                             알림 시간
                         </label>
-                        <select
-                            value={editTime}
-                            onChange={(e) => setEditTime(e.target.value)}
+                        <input
+                            type="datetime-local"
+                            value={reminderDateTime}
+                            onChange={e => setReminderDateTime(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
-                        >
-                            {reminderTimes.map((time) => (
-                                <option key={time} value={time}>{time}</option>
-                            ))}
-                        </select>
+                        />
                     </div>
 
                     <div>

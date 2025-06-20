@@ -22,7 +22,6 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     const [isDataFetched, setIsDataFetched] = useState(false);
 
     // --- Constants ---
-    const reminderTimesOptions = ['30분 후', '1시간 후', '2시간 후', '내일 같은 시간'];
     const reminderIntervalsOptions = ['반복하지 않음', '1일마다', '3일마다', '1주마다', '1달마다'];
 
     // 리마인더 삭제 핸들러
@@ -42,11 +41,11 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     };
 
     // 리마인더 수정 핸들러
-    const handleUpdateReminder = async (reminderId, notes, time, interval) => {
+    const handleUpdateReminder = async (reminderId, notes, dateTime, interval) => {
         try {
             setIsLoading(true);
 
-            // UI에서 선택한 값을 API 형식으로 변환
+            // 주기 설정에 따른 값 변환
             let reminderType = 'ONE_TIME';
             let frequencyInterval = 1;
 
@@ -65,17 +64,8 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                 frequencyInterval = parseInt(interval);
             }
 
-            // 시간 설정 처리 (현재는 단순화해서 기본 일시 사용)
-            const baseDatetime = new Date();
-
-            // reminderTime 값에 따라 시간 조정
-            if (time.includes('분 후')) {
-                baseDatetime.setMinutes(baseDatetime.getMinutes() + parseInt(time));
-            } else if (time.includes('시간 후')) {
-                baseDatetime.setHours(baseDatetime.getHours() + parseInt(time));
-            } else if (time === '내일 같은 시간') {
-                baseDatetime.setDate(baseDatetime.getDate() + 1);
-            }
+            // datetime-local 입력값을 Date 객체로 변환
+            const baseDatetime = new Date(dateTime);
 
             // API 요청 데이터 형식으로 변환
             const reminderData = {
@@ -96,7 +86,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                 reminder.id === reminderId ? {
                     ...reminder,
                     reminderNotes: notes,
-                    reminderTime: time,
+                    reminderTime: formatReminderTime(baseDatetime.toISOString()),
                     reminderInterval: interval
                 } : reminder
             ));
@@ -256,7 +246,6 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                     reminder={editingReminder}
                     onClose={() => setShowReminderEditModal(false)}
                     onSave={handleUpdateReminder}
-                    reminderTimes={reminderTimesOptions}
                     reminderIntervals={reminderIntervalsOptions}
                 />
             )}
@@ -264,4 +253,4 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     );
 };
 
-export { ReminderPage, ReminderEditModal };
+export { ReminderPage };

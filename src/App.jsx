@@ -15,7 +15,7 @@ import AuthPage from './pages/AuthPage.jsx';
 import SummaryPage from "./pages/SummaryPage.jsx"; // SummaryPage 임포트 확인
 import { MessageModal, ReauthModal } from './components/MyPageModals.jsx';
 import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
-import { ReminderPage, ReminderEditModal } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트
+import { ReminderPage } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트 수정
 import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페이지 임포트
 
 // 앱의 핵심 로직을 담는 내부 컴포넌트
