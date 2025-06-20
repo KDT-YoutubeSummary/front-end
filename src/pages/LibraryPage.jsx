@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import UserLibrary from '../components/UserLibrary.jsx';
+import { BookOpen, Database, Sparkles, Library, Play } from 'lucide-react';
 
 // --- 헬퍼 함수: 유튜브 ID 추출 ---
 const getYoutubeIdFromUrl = (url) => {
@@ -47,7 +48,7 @@ const LoadingModal = ({ message }) => {
 };
 
 // --- 리마인더 설정 모달 컴포넌트 ---
-const ReminderModal = ({ isOpen, onClose, onSave, itemTitle }) => {
+const ReminderModal = ({ isOpen, onClose, onSave, itemTitle, onShowError }) => {
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
     const [note, setNote] = useState('');
@@ -71,7 +72,7 @@ const ReminderModal = ({ isOpen, onClose, onSave, itemTitle }) => {
 
     const handleSave = () => {
         if (!date || !time) {
-            alert('리마인더의 기준이 될 날짜와 시간을 먼저 설정해주세요.');
+            onShowError('리마인더의 기준이 될 날짜와 시간을 먼저 설정해주세요.');
             return;
         }
         const reminderSettings = {
@@ -258,6 +259,8 @@ const LibraryPage = () => {
 
     const handleSaveReminder = async (reminderSettings) => {
         if (!reminderItem) return;
+        
+        // 모달 닫기 및 로딩 시작
         setIsReminderModalOpen(false);
         setIsGenerating(true);
 
@@ -283,20 +286,23 @@ const LibraryPage = () => {
             try {
                 await axios.post(`http://localhost:8080/api/recommendations/ai/${reminderItem.id}`, {}, getAuthHeader());
                 recommendationMessage = "\n\n또한, 5개의 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
-            } catch (recError) { console.error("❌ 추천 영상 생성 API 호출 실패:", recError); }
+            } catch (recError) { 
+                console.error("❌ 추천 영상 생성 API 호출 실패:", recError); 
+            }
 
             setMessageModalContent(`리마인더가 성공적으로 설정되었습니다!${recommendationMessage}`);
         } catch (err) {
             setMessageModalContent(`오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
         } finally {
-            setIsReminderModalOpen(false);
+            // 로딩 종료 및 상태 초기화
+            setIsGenerating(false);
             setReminderItem(null);
             setShowMessageModal(true);
         }
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8">
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
             <UserLibrary
                 libraryItems={libraryItems}
                 selectedLibraryItem={selectedLibraryItem}
@@ -318,7 +324,18 @@ const LibraryPage = () => {
             {isGenerating && <LoadingModal message="리마인더 저장 & 추천 영상 생성 중..." />}
 
             {showMessageModal && (<MessageModal message={messageModalContent} onClose={() => setShowMessageModal(false)} />)}
-            {isReminderModalOpen && reminderItem && (<ReminderModal isOpen={isReminderModalOpen} onClose={() => setIsReminderModalOpen(false)} onSave={handleSaveReminder} itemTitle={reminderItem.title} />)}
+            {isReminderModalOpen && reminderItem && (
+                <ReminderModal 
+                    isOpen={isReminderModalOpen} 
+                    onClose={() => setIsReminderModalOpen(false)} 
+                    onSave={handleSaveReminder} 
+                    itemTitle={reminderItem.title}
+                    onShowError={(message) => {
+                        setMessageModalContent(message);
+                        setShowMessageModal(true);
+                    }}
+                />
+            )}
         </div>
     );
 };

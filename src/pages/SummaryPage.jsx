@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { FileText, Play, Sparkles } from 'lucide-react';
 
 export default function SummaryPage() {
     const [summaryType, setSummaryType] = useState('기본 요약');
@@ -82,7 +83,7 @@ export default function SummaryPage() {
     };
 
     return (
-        <div className="max-w-full md:max-w-4xl mx-auto p-4 md:p-6"> {/* padding 추가로 UI 개선 */}
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
             {summaryData ? (
                 <div className="space-y-6">
                     <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
@@ -92,7 +93,7 @@ export default function SummaryPage() {
                                 {summaryData.thumbnailUrl && (
                                     <img src={summaryData.thumbnailUrl} alt="썸네일" className="w-full md:w-32 h-auto md:h-20 object-cover rounded-lg shadow" />
                                 )}
-                                <div className="text-center md:text-left">
+                                <div className="text-left">
                                     <h3 className="text-xl font-bold text-gray-800 break-words">{summaryData.title || '제목 없음'}</h3>
                                     <p className="text-sm text-gray-500">업로더: {summaryData.uploaderName || '알 수 없음'}</p>
                                     {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
@@ -102,7 +103,7 @@ export default function SummaryPage() {
                             </div>
 
                             {/* 요약 본문 */}
-                            <div className="mt-4 prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed">
+                            <div className="mt-4 prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed bg-green-50 p-4 rounded-lg border border-green-100">
                                 {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
                             </div>
 
@@ -112,7 +113,7 @@ export default function SummaryPage() {
                                     {summaryData.tags.map(tag => (
                                         <span
                                             key={tag}
-                                            className="inline-block bg-red-100 text-red-800 text-xs font-medium px-3 py-1 rounded-full"
+                                            className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full"
                                         >
                                             #{tag}
                                         </span>
@@ -124,16 +125,15 @@ export default function SummaryPage() {
 
                     <button
                         onClick={reset}
-                        className="w-full bg-gray-200 text-gray-800 py-3 px-8 rounded-lg hover:bg-gray-300 transition duration-200 ease-in-out"
+                        className="w-full bg-blue-50 text-blue-700 py-3 px-8 rounded-lg hover:bg-blue-100 transition duration-200 ease-in-out border border-blue-200 font-medium"
                     >
                         새로운 요약하기
                     </button>
                 </div>
             ) : (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 space-y-6">
-                    <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">YouTube 영상 요약</h2>
                     <div>
-                        <label htmlFor="summaryType" className="block text-sm font-semibold text-gray-700 mb-2">요약 타입</label>
+                        <label htmlFor="summaryType" className="block text-sm font-semibold text-gray-700 mb-2 text-left">요약 타입</label>
                         <select
                             id="summaryType"
                             value={summaryType}
@@ -147,7 +147,7 @@ export default function SummaryPage() {
                     </div>
 
                     <div>
-                        <label htmlFor="userPurpose" className="block text-sm font-semibold text-gray-700 mb-2">사용자 목적 (선택 사항)</label>
+                        <label htmlFor="userPurpose" className="block text-sm font-semibold text-gray-700 mb-2 text-left">사용자 목적 (선택 사항)</label>
                         <textarea
                             id="userPurpose"
                             value={userPurpose}
@@ -159,7 +159,7 @@ export default function SummaryPage() {
                     </div>
 
                     <div>
-                        <label htmlFor="youtubeUrl" className="block text-sm font-semibold text-gray-700 mb-2">유튜브 URL</label>
+                        <label htmlFor="youtubeUrl" className="block text-sm font-semibold text-gray-700 mb-2 text-left">유튜브 URL</label>
                         <input
                             id="youtubeUrl"
                             type="url"
@@ -170,7 +170,7 @@ export default function SummaryPage() {
                         />
                     </div>
 
-                    {error && <div className="text-red-500 text-sm mt-4 text-center">{error}</div>}
+                    {error && <div className="text-red-500 text-sm mt-4 text-left">{error}</div>}
 
                     <button
                         onClick={handleSubmit}

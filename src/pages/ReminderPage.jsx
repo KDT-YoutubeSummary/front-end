@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Reminder from '../components/Reminder';
 import ReminderEditModal from '../components/ReminderEditModal';
 import { reminderApi } from '../services/api.jsx';
+import { Bell, Clock, Sparkles } from 'lucide-react';
 
 // 확인된 문제 : 리마인더에 데이터가 호출되지 않는 문제
 //               콘솔에는 별 다른 출력이 없어서 디버깅이 힘듬
@@ -21,8 +22,6 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     const [showReminderEditModal, setShowReminderEditModal] = useState(false);
     const [editingReminder, setEditingReminder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const [isDataFetched, setIsDataFetched] = useState(false);
 
     // --- Constants ---
     const reminderIntervalsOptions = ['반복하지 않음', '1일마다', '3일마다', '1주마다', '1달마다'];
@@ -114,15 +113,71 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
             const fetchedReminders = await reminderApi.getUserReminders(userId);
             console.log('로드된 리마인더 데이터:', fetchedReminders);
 
-            // API 데이터를 컴포넌트에 맞게 변환
-            const formattedReminders = fetchedReminders.map(reminder => ({
-                id: reminder.reminderId,
-                summaryTitle: `리마인더 ${reminder.reminderId}`,
-                reminderTime: formatReminderTime(reminder.nextNotificationDatetime),
-                reminderInterval: formatReminderInterval(reminder.reminderType, reminder.frequencyInterval),
-                summaryContent: `알림 예정: ${new Date(reminder.nextNotificationDatetime).toLocaleString()}`,
-                reminderNotes: reminder.reminderNote || '메모 없음'
-            }));
+            // 각 리마인더에 대해 라이브러리 정보를 조회하여 영상 제목 가져오기
+            const formattedReminders = await Promise.all(
+                fetchedReminders.map(async (reminder) => {
+                    let videoTitle = `리마인더 ${reminder.reminderId}`;
+                    let summaryContent = `알림 예정: ${new Date(reminder.nextNotificationDatetime).toLocaleString()}`;
+                    let videoMetadata = {
+                        thumbnail: null,
+                        uploader: '정보 없음',
+                        views: '정보 없음',
+                        duration: '정보 없음'
+                    };
+                    
+                    try {
+                        // userLibraryId를 사용해서 라이브러리 정보 조회
+                        const libraryResponse = await fetch(`http://localhost:8080/api/libraries/${reminder.userLibraryId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                            }
+                        });
+                        
+                        if (libraryResponse.ok) {
+                            const libraryData = await libraryResponse.json();
+                            if (libraryData.data) {
+                                // 영상 제목 설정
+                                if (libraryData.data.video_title) {
+                                    videoTitle = libraryData.data.video_title;
+                                }
+                                
+                                // 요약 내용 설정
+                                if (libraryData.data.summary_text) {
+                                    summaryContent = libraryData.data.summary_text;
+                                }
+                                
+                                // 유튜브 메타데이터 설정
+                                if (libraryData.data.uploader_name) {
+                                    videoMetadata.uploader = libraryData.data.uploader_name;
+                                }
+                                if (libraryData.data.view_count) {
+                                    videoMetadata.views = libraryData.data.view_count.toLocaleString();
+                                }
+                                
+                                // 썸네일 URL 생성 (original_url에서 video ID 추출)
+                                if (libraryData.data.original_url) {
+                                    const videoId = libraryData.data.original_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+                                    if (videoId) {
+                                        videoMetadata.thumbnail = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`라이브러리 정보 조회 실패 (ID: ${reminder.userLibraryId}):`, error);
+                    }
+
+                    return {
+                        id: reminder.reminderId,
+                        summaryTitle: videoTitle,
+                        reminderTime: formatReminderTime(reminder.nextNotificationDatetime),
+                        reminderInterval: formatReminderInterval(reminder.reminderType, reminder.frequencyInterval),
+                        summaryContent: summaryContent,
+                        reminderNotes: reminder.reminderNote || '메모 없음',
+                        videoMetadata: videoMetadata
+                    };
+                })
+            );
 
             setReminders(formattedReminders);
         } catch (error) {
@@ -131,7 +186,6 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
             setShowMessageModal(true);
         } finally {
             setIsLoading(false);
-            setIsDataFetched(true);
         }
     };
 
@@ -169,36 +223,15 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
         }
     };
 
-    // Intersection Observer를 사용하여 컴포넌트가 화면에 표시될 때 감지
+    // 컴포넌트 마운트 시 리마인더 데이터 로드
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                // 화면에 표시되는지 확인
-                setIsVisible(entry.isIntersecting);
-            },
-            { threshold: 0.1 } // 10% 이상 보이면 표시된 것으로 간주
-        );
-
-        // 현재 컴포넌트를 관찰 대상으로 설정
-        const currentElement = document.getElementById('reminder-page');
-        if (currentElement) {
-            observer.observe(currentElement);
-        }
-
-        return () => {
-            if (currentElement) {
-                observer.unobserve(currentElement);
-            }
-        };
-    }, []);
-
-    // 컴포넌트가 화면에 표시될 때 리마인더 데이터 다시 로드
-    useEffect(() => {
-        if (isVisible && isLoggedIn && userId && !isDataFetched) {
-            console.log('컴포넌트가 화면에 표시됨, 리마인더 API 호출 시작');
+        if (isLoggedIn && userId) {
+            console.log('ReminderPage 마운트됨, 리마인더 API 호출 시작');
+            console.log('userId:', userId);
+            console.log('isLoggedIn:', isLoggedIn);
             fetchUserReminders();
         }
-    }, [isVisible, isLoggedIn, userId, isDataFetched]);
+    }, [isLoggedIn, userId]);
 
     const handleEditReminder = (reminder) => {
         setEditingReminder(reminder);
@@ -206,7 +239,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     };
 
     return (
-        <div id="reminder-page" className="max-w-4xl mx-auto space-y-6">
+        <div id="reminder-page" className="max-w-6xl mx-auto p-6 space-y-8">
             {isLoading && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-auto text-center animate-fade-in-up">
@@ -217,18 +250,12 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                 </div>
             )}
 
-            {reminders.length === 0 && isDataFetched ? (
+            {reminders.length === 0 && !isLoading ? (
                 <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
                     <p className="text-lg font-medium">설정된 리마인더가 없습니다.</p>
                     <p className="text-sm">라이브러리에서 요약본에 대한 리마인더를 설정해보세요.</p>
                 </div>
             ) : null}
-
-            {!isLoading && !isDataFetched && (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
-                    <p className="text-lg font-medium">리마인더 데이터를 로드하는 중입니다...</p>
-                </div>
-            )}
 
             {reminders.length > 0 && (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">

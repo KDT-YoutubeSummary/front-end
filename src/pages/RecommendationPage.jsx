@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; // React Router 추가
 import Recommendation from '../components/Recommendation';
 import { recommendationApi } from '../services/api.jsx';
+import { Lightbulb, Plus, TrendingUp, Users, Clock } from 'lucide-react';
 
 /**
  * Recommendation Page Component
@@ -105,44 +106,66 @@ const RecommendationPage = () => {
     }, [isVisible, userId, isDataFetched]);
 
     return (
-        <div id="recommendation-page" className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg border border-gray-200 space-y-6 text-center">
+        <div id="recommendation-page" className="max-w-6xl mx-auto p-6 space-y-8">
             {/* 로딩 중 표시 */}
             {isLoading && (
-                <div className="flex flex-col items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500 mb-4"></div>
-                    <p className="text-gray-600">추천 영상을 불러오는 중입니다...</p>
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500 mb-4"></div>
+                        <p className="text-gray-600 font-medium">추천 영상을 분석하고 있습니다...</p>
+                        <p className="text-gray-500 text-sm mt-2">잠시만 기다려주세요</p>
+                    </div>
                 </div>
             )}
 
             {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
             {!isLoading && recommendedVideos.length === 0 && isDataFetched ? (
-                <>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">영상을 추천받으세요!</h3>
-                    <p className="text-gray-600 mb-6">사용자 라이브러리에 요약본을 추가하면 <br/>요약본의 태그를 분석하여 관심사에 맞는 YouTube 동영상을 추천해 드립니다.</p>
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <TrendingUp className="h-10 w-10 text-purple-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4">맞춤형 영상을 추천받으세요!</h3>
+                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+                            사용자 라이브러리에 요약본을 추가하면 AI가 태그를 분석하여 
+                            <span className="font-semibold text-purple-600">관심사에 맞는 YouTube 동영상</span>을 추천해 드립니다.
+                        </p>
 
-                    <button
-                        onClick={handleNavigateToSummary}
-                        className="bg-purple-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 shadow-md"
-                    >
-                        영상 요약 등록
-                    </button>
-                </>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <button
+                                onClick={handleNavigateToSummary}
+                                className="bg-purple-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2"
+                            >
+                                <Plus className="h-5 w-5" />
+                                <span>영상 요약 등록</span>
+                            </button>
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <Users className="h-4 w-4" />
+                                <span>개인화된 추천</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             ) : null}
 
             {/* 추천 영상이 로드되지 않았고, 로딩중이 아닌 경우 안내문구 표시 */}
             {!isLoading && !isDataFetched && (
-                <div className="py-8">
-                    <p className="text-gray-600">추천 영상 정보를 로드하는 중입니다...</p>
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                    <div className="text-center py-8">
+                        <p className="text-gray-600">추천 영상 정보를 로드하는 중입니다...</p>
+                    </div>
                 </div>
             )}
 
             {/* 추천 영상 목록 표시 */}
             {!isLoading && recommendedVideos.length > 0 && (
                 <div className="space-y-6">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-6">추천 영상 목록</h3>
-                    {recommendedVideos.map((video) => (
-                        <Recommendation key={video.id} recommendation={video} />
-                    ))}
+                    {/* 추천 영상 카드들 */}
+                    <div className="space-y-4">
+                        {recommendedVideos.map((video, index) => (
+                            <Recommendation key={video.id} recommendation={video} index={index} />
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

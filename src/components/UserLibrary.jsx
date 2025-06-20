@@ -41,7 +41,7 @@ const UserLibrary = ({
 
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="space-y-8">
             {selectedLibraryItem ? (
                 // Detailed Library Item View
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fade-in-up">
@@ -54,10 +54,10 @@ const UserLibrary = ({
                                 onError={(e) => e.target.src = 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image'}
                             />
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2 break-words">
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2 break-words text-left">
                                     {selectedLibraryItem.title}
                                 </h3>
-                                <p className="text-gray-600 text-sm mb-2 truncate">{selectedLibraryItem.uploader}</p>
+                                <p className="text-gray-600 text-sm mb-2 truncate text-left">{selectedLibraryItem.uploader}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                     <div className="flex items-center space-x-1">
                                         <Eye className="h-4 w-4"/>
@@ -114,21 +114,21 @@ const UserLibrary = ({
 
                     {/* ✨✨✨ 수정된 부분 ✨✨✨ */}
                     <div className="p-6">
-                        <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4 text-left">
                             요약 내용
                         </h4>
                         {/* div 태그 대신 ReactMarkdown 컴포넌트를 사용합니다.
                           TailwindCSS의 'prose' 클래스는 마크다운 렌더링 결과물에
                           자동으로 아름다운 스타일(굵기, 목록, 간격 등)을 적용해주는 유용한 클래스입니다.
                         */}
-                        <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                        <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed text-left">
                             <ReactMarkdown>{selectedLibraryItem.summary}</ReactMarkdown>
                         </div>
                     </div>
 
                     {/* User Memo Section */}
                     <div className="p-6 border-t border-gray-200 bg-gray-50">
-                        <h4 className="text-lg font-semibold text-gray-800 mb-4">사용자 메모</h4>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4 text-left">사용자 메모</h4>
                         <textarea
                             value={userNotes}
                             onChange={(e) => setUserNotes(e.target.value)}
@@ -226,41 +226,158 @@ const UserLibrary = ({
 
                     {/* Tag Statistics Section */}
                     <div className="mt-8 pt-8 border-t border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-gray-800">태그별 통계</h3>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-800">라이브러리 통계</h3>
+                                    <p className="text-gray-600 text-sm">태그별 요약 영상 분포</p>
+                                </div>
+                            </div>
                             <button
                                 onClick={() => setShowTagStats(!showTagStats)}
-                                className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                    showTagStats 
+                                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                                        : 'bg-red-500 text-white hover:bg-red-600'
+                                }`}
                             >
                                 {showTagStats ? '통계 숨기기' : '통계 보기'}
                             </button>
                         </div>
+                        
                         {showTagStats && (
-                            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 animate-fade-in">
-                                {tagChartData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <PieChart>
-                                            <Pie
-                                                data={tagChartData}
-                                                cx="50%"
-                                                cy="50%"
-                                                outerRadius={100}
-                                                fill="#8884d8"
-                                                dataKey="value"
-                                                labelLine={false}
-                                                label={({name, percent}) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                                            >
-                                                {tagChartData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}/>
-                                                ))}
-                                            </Pie>
-                                            <Tooltip/>
-                                            <Legend />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <p className="text-center text-gray-600">태그 통계를 표시할 데이터가 없습니다.</p>
-                                )}
+                            <div className="space-y-6 animate-fade-in">
+                                {/* 통계 요약 카드 */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-blue-50 text-blue-800 rounded-xl p-6 shadow-lg border border-blue-200">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-blue-700 text-sm font-medium">총 영상 수</p>
+                                                <p className="text-3xl font-bold">{libraryItems.length}</p>
+                                            </div>
+                                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-green-50 text-green-800 rounded-xl p-6 shadow-lg border border-green-200">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-green-700 text-sm font-medium">사용된 태그</p>
+                                                <p className="text-3xl font-bold">{tagChartData.length}</p>
+                                            </div>
+                                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-purple-50 text-purple-800 rounded-xl p-6 shadow-lg border border-purple-200">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-purple-700 text-sm font-medium">가장 인기 태그</p>
+                                                <p className="text-lg font-bold truncate">
+                                                    {tagChartData.length > 0 ? tagChartData[0]?.name || '-' : '-'}
+                                                </p>
+                                            </div>
+                                            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                                <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 차트 섹션 */}
+                                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                                    <div className="flex items-center space-x-3 mb-6">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                            </svg>
+                                        </div>
+                                        <h4 className="text-lg font-semibold text-gray-800">태그별 분포</h4>
+                                    </div>
+                                    
+                                    {tagChartData.length > 0 ? (
+                                        <div className="space-y-4">
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={tagChartData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        outerRadius={100}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                        labelLine={false}
+                                                        label={({name, percent}) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                                    >
+                                                        {tagChartData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}/>
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip 
+                                                        contentStyle={{
+                                                            backgroundColor: 'white',
+                                                            border: '1px solid #e5e7eb',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                        }}
+                                                    />
+                                                    <Legend 
+                                                        layout="horizontal" 
+                                                        verticalAlign="bottom" 
+                                                        align="center"
+                                                        wrapperStyle={{
+                                                            paddingTop: '20px'
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            
+                                            {/* 태그 목록 */}
+                                            <div className="mt-6">
+                                                <h5 className="text-md font-semibold text-gray-700 mb-3">태그 상세</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {tagChartData.map((tag, index) => (
+                                                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                            <div className="flex items-center space-x-2">
+                                                                <div 
+                                                                    className="w-3 h-3 rounded-full" 
+                                                                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                                                ></div>
+                                                                <span className="font-medium text-gray-700">{tag.name}</span>
+                                                            </div>
+                                                            <span className="text-sm text-gray-500 font-semibold">{tag.value}개</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                </svg>
+                                            </div>
+                                            <p className="text-gray-600 font-medium mb-2">통계 데이터가 없습니다</p>
+                                            <p className="text-gray-500 text-sm">요약 영상을 추가하면 태그별 통계를 확인할 수 있습니다</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>

@@ -6,7 +6,7 @@ import axios from 'axios';
 
 // CSS 및 아이콘 임포트
 import './App.css';
-import { Home, Library, Bell, User, Play, LogOut, Lightbulb } from 'lucide-react';
+import { Home, Library, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings } from 'lucide-react';
 
 // 페이지 및 모달 컴포넌트 임포트
 import LibraryPage from './pages/LibraryPage.jsx';
@@ -22,6 +22,8 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
 function AppContent() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    console.log('AppContent 렌더링 시작', { location: location.pathname });
 
     // --- 상태(State) 관리 ---
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken'));
@@ -162,7 +164,7 @@ function AppContent() {
     const getCurrentPageLabel = () => {
         if (location.pathname === '/login') return '로그인 / 회원가입';
         const currentItem = menuItems.find(item => item.path === location.pathname);
-        return currentItem ? currentItem.label : 'LearnClip';
+        return currentItem ? currentItem.label : 'YouSum';
     };
 
     return (
@@ -174,7 +176,7 @@ function AppContent() {
                         <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center shadow-md">
                             <Play className="h-5 w-5 md:h-6 md:w-6 text-white fill-current" />
                         </div>
-                        <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-800">LearnClip</h1>
+                        <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
                     </Link>
                 </div>
                 <div className="mt-4 flex-grow">
@@ -202,19 +204,116 @@ function AppContent() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col w-full">
-                <header className="bg-white shadow-sm border-b px-8 py-4 flex items-center justify-between">
-                    <h2 className="text-xl md:text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
-                    <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-600 hidden sm:block">{isLoggedIn ? `로그인됨 (ID: ${globalUserName})` : '로그인 필요'}</span>
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center font-bold text-gray-600">{globalUserName?.[0]?.toUpperCase()}</div>
+                {/* 기존 헤더 (페이지명 + 로그인된 유저 표시) */}
+                <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            {/* 페이지별 아이콘 */}
+                            {location.pathname === '/' && (
+                                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                                    <FileText className="h-5 w-5 text-white" />
+                                </div>
+                            )}
+                            {location.pathname === '/library' && (
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <Library className="h-5 w-5 text-white" />
+                                </div>
+                            )}
+                            {location.pathname === '/reminders' && (
+                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <Bell className="h-5 w-5 text-white" />
+                                </div>
+                            )}
+                            {location.pathname === '/recommendation' && (
+                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <Lightbulb className="h-5 w-5 text-white" />
+                                </div>
+                            )}
+                            {location.pathname === '/mypage' && (
+                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                    <User className="h-5 w-5 text-white" />
+                                </div>
+                            )}
+                            
+                            <div className="flex items-center space-x-4">
+                                <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
+                                
+                                {/* 페이지별 설명과 기능 태그 */}
+                                {location.pathname === '/' && (
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
+                                        <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full mt-1">
+                                            <Sparkles className="h-4 w-4" />
+                                            <span>AI 요약</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {location.pathname === '/library' && (
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">저장된 영상 요약 관리</span>
+                                        <div className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-1">
+                                            <Play className="h-4 w-4" />
+                                            <span>내 라이브러리</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {location.pathname === '/reminders' && (
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">영상 복습 알림 관리</span>
+                                        <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
+                                            <Clock className="h-4 w-4" />
+                                            <span>스마트 알림</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {location.pathname === '/recommendation' && (
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
+                                        <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
+                                            <TrendingUp className="h-4 w-4" />
+                                            <span>개인화 추천</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {location.pathname === '/mypage' && (
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">개인 정보 및 계정 관리</span>
+                                        <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
+                                            <Settings className="h-4 w-4" />
+                                            <span>계정 설정</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4">
+                            {isLoggedIn ? (
+                                <button 
+                                    onClick={() => navigate('/mypage')}
+                                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                                >
+                                    <User className="h-4 w-4" />
+                                    <span>{globalUserName}님</span>
+                                </button>
+                            ) : (
+                                <div className="text-sm text-gray-500">로그인되지 않음</div>
+                            )}
+                        </div>
                     </div>
                 </header>
-                <main className="flex-1 overflow-y-auto p-8 bg-gray-100">
+
+                <main className="flex-1 overflow-y-auto bg-gray-100">
                     <Routes>
                         {/* ✅ SummaryPage 컴포넌트를 직접 라우팅하여 백엔드 통신 로직이 실행되도록 합니다. */}
-                        <Route path="/" element={<SummaryPage />} />
+                        <Route path="/" element={
+                            <div>
+                                {console.log('SummaryPage 렌더링 시작')}
+                                <SummaryPage />
+                            </div>
+                        } />
 
-                        <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect />} />
+                        <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
                         <Route path="/reminders"
                                element={isLoggedIn ? (
                                    <ReminderPage
@@ -223,11 +322,11 @@ function AppContent() {
                                        setMessageModalContent={setMessageModalContent} // 메시지 모달 관련 props 전달
                                        setShowMessageModal={setShowMessageModal} // 메시지 모달 관련 props 전달
                                    />
-                               ) : <AuthRedirect />}
+                               ) : <AuthRedirect onShowMessage={handleAppShowMessage} />}
                         />
-                        <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect />} />
+                        <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
 
-                        <Route path="/mypage" element={isLoggedIn ? <MyPage isLoggedIn={isLoggedIn} onUpdateGlobalUserDisplay={setGlobalUserName} onShowMessage={handleAppShowMessage} onShowReauthModal={setShowReauthModal} onSetReauthCallback={setReauthCallback} onUserLoggedOut={handleLogout} /> : <AuthRedirect />} />
+                        <Route path="/mypage" element={isLoggedIn ? <MyPage isLoggedIn={isLoggedIn} onUpdateGlobalUserDisplay={setGlobalUserName} onShowMessage={handleAppShowMessage} onShowReauthModal={setShowReauthModal} onSetReauthCallback={setReauthCallback} onUserLoggedOut={handleLogout} /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
 
                         <Route path="/login" element={<AuthPage onLogin={handleLoginSubmit} onSignup={handleSignupSubmit} onMessage={handleAppShowMessage} />} />
                         <Route path="/oauth/redirect" element={<OAuth2RedirectHandler />} />
@@ -243,12 +342,12 @@ function AppContent() {
     );
 }
 
-function AuthRedirect() {
+function AuthRedirect({ onShowMessage }) {
     const navigate = useNavigate();
     useEffect(() => {
-        alert("이 서비스를 이용하려면 로그인이 필요합니다.");
+        onShowMessage("이 서비스를 이용하려면 로그인이 필요합니다.");
         navigate('/login');
-    }, [navigate]);
+    }, [navigate, onShowMessage]);
     return null;
 }
 

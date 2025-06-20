@@ -1,7 +1,8 @@
 // pages/MyPage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mail, Trash2, User as UserIcon, Play, Edit } from 'lucide-react';
+import { Mail, Trash2, User as UserIcon, Play, Edit, User, Settings, Sparkles } from 'lucide-react';
 import { ProfileEditModal, DeleteAccountModal, MessageModal, ReauthModal } from '../components/MyPageModals';
+import AuthModal from '../components/AuthModal';
 
 
 const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowReauthModal, onSetReauthCallback, onUserLoggedOut }) => {
@@ -212,42 +213,57 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
+            {/* 프로필 섹션 */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">내 프로필</h3>
-                <div className="space-y-4">
-                    <div className="flex items-center space-x-3 text-gray-700">
-                        <UserIcon className="h-5 w-5 text-red-500" />
-                        <span className="font-semibold">ID:</span>
-                        <span>{userId}</span>
+                <div className="flex items-center space-x-4 mb-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                        <UserIcon className="h-8 w-8 text-white" />
                     </div>
-                    <div className="flex items-center space-x-3 text-gray-700">
-                        <Mail className="h-5 w-5 text-blue-500" />
-                        <span className="font-semibold">이메일:</span>
-                        <span>{userEmail}</span>
+                    <div>
+                        <h3 className="text-2xl font-bold text-gray-800 text-left">내 프로필</h3>
+                        <p className="text-gray-600 text-left">계정 정보를 확인하고 관리하세요</p>
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center space-x-3 text-gray-700 mb-2">
+                            <UserIcon className="h-5 w-5 text-red-500" />
+                            <span className="font-semibold text-sm text-gray-600 text-left">사용자 ID</span>
+                        </div>
+                        <span className="text-lg font-medium text-gray-800 text-left">{userId}</span>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center space-x-3 text-gray-700 mb-2">
+                            <Mail className="h-5 w-5 text-red-500" />
+                            <span className="font-semibold text-sm text-gray-600 text-left">이메일</span>
+                        </div>
+                        <span className="text-lg font-medium text-gray-800 text-left">{userEmail}</span>
                     </div>
                 </div>
 
-                <div className="mt-8 space-y-4">
+                {/* 프로필 수정과 회원 탈퇴 버튼을 한 행에 배치 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                         onClick={() => setShowProfileEditModal(true)}
-                        className="w-full bg-indigo-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-indigo-600 transition-colors transform hover:scale-105 shadow-md flex items-center justify-center space-x-2"
+                        className="bg-gradient-to-r from-red-500 to-red-600 text-white py-4 px-6 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 group"
                     >
-                        <Edit className="h-5 w-5" />
-                        <span>프로필 (ID/이메일/비밀번호) 수정</span>
+                        <Edit className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+                        <span>프로필 수정</span>
                     </button>
                     <button
                         onClick={() => setShowDeleteAccountModal(true)}
-                        className="w-full bg-gray-200 text-red-700 py-3 px-6 rounded-lg font-bold hover:bg-gray-300 transition-colors transform hover:scale-105 shadow-md flex items-center justify-center space-x-2"
+                        className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 py-4 px-6 rounded-lg font-bold hover:from-gray-200 hover:to-gray-300 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 group border border-gray-300"
                     >
-                        <Trash2 className="h-5 w-5" />
+                        <Trash2 className="h-5 w-5 text-red-500 group-hover:scale-110 transition-transform" />
                         <span>회원 탈퇴</span>
                     </button>
                 </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mt-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">사용자 활동 로그</h3>
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 text-left">사용자 활동 로그</h3>
                 {userActivityLogs.length === 0 ? (
                     <p className="text-gray-600">아직 요약된 영상이 없습니다. 메인 페이지에서 영상을 요약해보세요!</p>
                 ) : (
