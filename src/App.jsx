@@ -36,7 +36,6 @@ function AppContent() {
     const [showReauthModal, setShowReauthModal] = useState(false);
     const [reauthCallback, setReauthCallback] = useState(null);
     const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
@@ -200,63 +199,34 @@ function AppContent() {
 
     return (
         <div className="flex min-h-screen w-full bg-gray-50 font-inter">
-            {/* Mobile Menu Overlay */}
-            {isMobileMenuOpen && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
-            )}
-
             {/* Sidebar */}
-            <nav className={`fixed md:relative w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
-                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-            }`}>
+            <nav className="w-20 md:w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col">
                 <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
-                    <Link to="/" className="flex items-center space-x-2 justify-start" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link to="/" className="flex items-center space-x-2 justify-center md:justify-start">
                         <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center shadow-md">
                             <Play className="h-5 w-5 md:h-6 md:w-6 text-white fill-current" />
                         </div>
-                        <h1 className="text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
+                        <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
                     </Link>
                 </div>
                 <div className="mt-4 flex-grow">
                     {menuItems.map((item) => (
-                        <Link 
-                            key={item.id} 
-                            to={item.path} 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`w-full flex items-center justify-start space-x-3 px-3 py-3 md:px-6 md:py-4 text-left transition-all duration-200 ease-in-out ${
-                                location.pathname === item.path 
-                                    ? 'bg-red-100 text-red-700 border-r-4 border-red-500 font-semibold' 
-                                    : 'text-gray-700 hover:bg-red-50'
-                            }`}
-                        >
+                        <Link key={item.id} to={item.path} className={`w-full flex items-center justify-center md:justify-start space-x-3 px-3 py-3 md:px-6 md:py-4 text-left transition-all duration-200 ease-in-out ${location.pathname === item.path ? 'bg-red-100 text-red-700 border-r-4 border-red-500 font-semibold' : 'text-gray-700 hover:bg-red-50'}`}>
                             <item.icon className="h-5 w-5" />
-                            <span>{item.label}</span>
+                            <span className="hidden md:block">{item.label}</span>
                         </Link>
                     ))}
                 </div>
                 <div className="mt-auto p-4">
                     {isLoggedIn ? (
-                        <button 
-                            onClick={() => {
-                                setShowLogoutConfirmModal(true);
-                                setIsMobileMenuOpen(false);
-                            }} 
-                            className="w-full flex items-center justify-start space-x-3 p-3 text-left text-gray-700 hover:bg-gray-100 rounded-lg"
-                        >
+                        <button onClick={() => setShowLogoutConfirmModal(true)} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-gray-700 hover:bg-gray-100 rounded-lg">
                             <LogOut className="h-5 w-5" />
-                            <span className="font-medium">로그아웃</span>
+                            <span className="hidden md:block font-medium">로그아웃</span>
                         </button>
                     ) : (
-                        <Link 
-                            to="/login" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="w-full flex items-center justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg"
-                        >
+                        <Link to="/login" className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
                             <User className="h-5 w-5" />
-                            <span className="font-medium">로그인/회원가입</span>
+                            <span className="hidden md:block font-medium">로그인/회원가입</span>
                         </Link>
                     )}
                 </div>
@@ -264,106 +234,82 @@ function AppContent() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col w-full">
-                {/* Mobile Header */}
-                <div className="md:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                    <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    </button>
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-md">
-                            <Play className="h-5 w-5 text-white fill-current" />
-                        </div>
-                        <h1 className="text-lg font-extrabold text-gray-800">YouSum</h1>
-                    </div>
-                    {isLoggedIn && (
-                        <button 
-                            onClick={() => navigate('/mypage')}
-                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <User className="h-5 w-5" />
-                        </button>
-                    )}
-                </div>
-
                 {/* 기존 헤더 (페이지명 + 로그인된 유저 표시) */}
-                <header className="hidden md:block bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-4 md:py-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                        <div className="flex items-center space-x-3 md:space-x-4">
+                <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
                             {/* 페이지별 아이콘 */}
                             {location.pathname === '/' && (
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
-                                    <FileText className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                    <FileText className="h-5 w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/library' && (
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
-                                    <Library className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+                                    <Library className="h-5 w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/reminders' && (
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                                    <Bell className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <Bell className="h-5 w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/recommendation' && (
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                                    <Lightbulb className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <Lightbulb className="h-5 w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/mypage' && (
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
-                                    <User className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                    <User className="h-5 w-5 text-white" />
                                 </div>
                             )}
                             
-                            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
-                                <h2 className="text-xl md:text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
+                            <div className="flex items-center space-x-4">
+                                <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
                                 
                                 {/* 페이지별 설명과 기능 태그 */}
                                 {location.pathname === '/' && (
-                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
-                                        <span className="text-xs md:text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
-                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-red-600 bg-red-50 px-2 md:px-3 py-1 rounded-full w-fit">
-                                            <Sparkles className="h-3 w-3 md:h-4 md:w-4" />
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
+                                        <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
+                                            <Sparkles className="h-4 w-4" />
                                             <span>AI 요약</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/library' && (
-                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
-                                        <span className="text-xs md:text-sm text-gray-600">저장된 영상 요약 관리</span>
-                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-yellow-600 bg-yellow-50 px-2 md:px-3 py-1 rounded-full w-fit">
-                                            <Play className="h-3 w-3 md:h-4 md:w-4" />
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">저장된 영상 요약 관리</span>
+                                        <div className="flex items-center space-x-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full mt-1">
+                                            <Play className="h-4 w-4" />
                                             <span>내 라이브러리</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/reminders' && (
-                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
-                                        <span className="text-xs md:text-sm text-gray-600">영상 복습 알림 관리</span>
-                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-full w-fit">
-                                            <Clock className="h-3 w-3 md:h-4 md:w-4" />
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">영상 복습 알림 관리</span>
+                                        <div className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-1">
+                                            <Clock className="h-4 w-4" />
                                             <span>스마트 알림</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/recommendation' && (
-                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
-                                        <span className="text-xs md:text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
-                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-purple-600 bg-purple-50 px-2 md:px-3 py-1 rounded-full w-fit">
-                                            <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
+                                        <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
+                                            <TrendingUp className="h-4 w-4" />
                                             <span>개인화 추천</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/mypage' && (
-                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
-                                        <span className="text-xs md:text-sm text-gray-600">개인 정보 및 계정 관리</span>
-                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-red-600 bg-red-50 px-2 md:px-3 py-1 rounded-full w-fit">
-                                            <Settings className="h-3 w-3 md:h-4 md:w-4" />
+                                    <div className="flex items-end space-x-3">
+                                        <span className="text-sm text-gray-600">개인 정보 및 계정 관리</span>
+                                        <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
+                                            <Settings className="h-4 w-4" />
                                             <span>계정 설정</span>
                                         </div>
                                     </div>
@@ -371,18 +317,17 @@ function AppContent() {
                             </div>
                         </div>
                         
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center space-x-4">
                             {isLoggedIn ? (
                                 <button 
                                     onClick={() => navigate('/mypage')}
-                                    className="flex items-center space-x-2 text-xs md:text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-2 md:px-3 py-2 rounded-lg transition-colors"
+                                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
                                 >
-                                    <User className="h-3 w-3 md:h-4 md:w-4" />
-                                    <span className="hidden sm:inline">{globalUserName}님</span>
-                                    <span className="sm:hidden">{globalUserName}</span>
+                                    <User className="h-4 w-4" />
+                                    <span>{globalUserName}님</span>
                                 </button>
                             ) : (
-                                <div className="text-xs md:text-sm text-gray-500">로그인되지 않음</div>
+                                <div className="text-sm text-gray-500">로그인되지 않음</div>
                             )}
                         </div>
                     </div>

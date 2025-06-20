@@ -143,41 +143,41 @@ const RecommendationPage = () => {
     }, [filterVideos]);
 
     return (
-        <div id="recommendation-page" className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
+        <div id="recommendation-page" className="max-w-6xl mx-auto p-6 space-y-8">
             {/* 로딩 중 표시 */}
             {isLoading && (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
-                    <div className="flex flex-col items-center justify-center py-8 md:py-12">
-                        <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-t-4 border-b-4 border-purple-500 mb-3 md:mb-4"></div>
-                        <p className="text-gray-600 font-medium text-sm md:text-base">추천 영상을 분석하고 있습니다...</p>
-                        <p className="text-gray-500 text-xs md:text-sm mt-1 md:mt-2">잠시만 기다려주세요</p>
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500 mb-4"></div>
+                        <p className="text-gray-600 font-medium text-base">추천 영상을 분석하고 있습니다...</p>
+                        <p className="text-gray-500 text-sm mt-2">잠시만 기다려주세요</p>
                     </div>
                 </div>
             )}
 
             {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
             {!isLoading && recommendedVideos.length === 0 && isDataFetched ? (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
-                    <div className="text-center py-8 md:py-12">
-                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                            <TrendingUp className="h-8 w-8 md:h-10 md:w-10 text-purple-600" />
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <TrendingUp className="h-10 w-10 text-purple-600" />
                         </div>
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4">맞춤형 영상을 추천받으세요!</h3>
-                        <p className="text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed text-sm md:text-base">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4">맞춤형 영상을 추천받으세요!</h3>
+                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
                             사용자 라이브러리에 요약본을 추가하면 AI가 태그를 분석하여<br />
                             <span className="font-semibold text-purple-600">관심사에 맞는 YouTube 동영상</span>을 추천해 드립니다.
                         </p>
 
-                        <div className="flex flex-col gap-3 md:gap-4 justify-center items-center">
+                        <div className="flex flex-col gap-4 justify-center items-center">
                             <button
                                 onClick={handleNavigateToSummary}
-                                className="bg-purple-500 text-white py-2 md:py-3 px-6 md:px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-sm md:text-base"
+                                className="bg-purple-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-base"
                             >
-                                <Plus className="h-4 w-4 md:h-5 md:w-5" />
+                                <Plus className="h-5 w-5" />
                                 <span>영상 요약 등록</span>
                             </button>
-                            <div className="flex items-center space-x-2 text-xs md:text-sm text-gray-500">
-                                <Users className="h-3 w-3 md:h-4 md:w-4" />
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <Users className="h-4 w-4" />
                                 <span>개인화된 추천</span>
                             </div>
                         </div>
@@ -187,48 +187,48 @@ const RecommendationPage = () => {
 
             {/* 추천 영상이 로드되지 않았고, 로딩중이 아닌 경우 안내문구 표시 */}
             {!isLoading && !isDataFetched && (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
-                    <div className="text-center py-6 md:py-8">
-                        <p className="text-gray-600 text-sm md:text-base">추천 영상 정보를 로드하는 중입니다...</p>
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                    <div className="text-center py-8">
+                        <p className="text-gray-600 text-base">추천 영상 정보를 로드하는 중입니다...</p>
                     </div>
                 </div>
             )}
 
             {/* 추천 영상 목록 표시 */}
             {!isLoading && recommendedVideos.length > 0 && (
-                <div className="space-y-4 md:space-y-6">
+                <div className="space-y-6">
                     {/* Search and Filter Inputs */}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex gap-4">
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 md:h-5 md:w-5"/>
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"/>
                             <input
                                 type="text"
                                 placeholder="영상 제목으로 검색..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 md:pl-10 pr-3 md:pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-sm md:text-base"
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-base"
                             />
                         </div>
                         <div className="flex-1 relative">
-                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 md:h-5 md:w-5"/>
+                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"/>
                             <input
                                 type="text"
                                 placeholder="태그로 필터링..."
                                 value={filterTag}
                                 onChange={(e) => setFilterTag(e.target.value)}
-                                className="w-full pl-10 md:pl-10 pr-3 md:pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-sm md:text-base"
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-base"
                             />
                         </div>
                     </div>
 
                     {/* Loading or No Results Message */}
                     {filteredVideos.length === 0 && (searchTerm || filterTag) ? (
-                        <div className="text-center text-gray-500 p-6 md:p-8 bg-white rounded-xl shadow-lg border border-gray-200">
-                            <p className="text-base md:text-lg font-medium">검색 결과가 없습니다.</p>
-                            <p className="text-xs md:text-sm">다른 검색어나 태그를 시도해보세요.</p>
+                        <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                            <p className="text-lg font-medium">검색 결과가 없습니다.</p>
+                            <p className="text-sm">다른 검색어나 태그를 시도해보세요.</p>
                         </div>
                     ) : (
-                        <div className="space-y-3 md:space-y-4">
+                        <div className="space-y-4">
                             {filteredVideos.map((video, index) => (
                                 <Recommendation key={video.id} recommendation={video} index={index} />
                             ))}

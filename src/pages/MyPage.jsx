@@ -198,93 +198,93 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
             {/* 프로필 섹션 */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
-                <div className="flex items-center space-x-3 md:space-x-4 mb-6 md:mb-8">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
-                        <UserIcon className="h-6 w-6 md:h-8 md:w-8 text-white" />
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                <div className="flex items-center space-x-4 mb-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                        <UserIcon className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 text-left">내 프로필</h3>
-                        <p className="text-gray-600 text-left text-sm md:text-base">계정 정보를 확인하고 관리하세요</p>
+                        <h3 className="text-2xl font-bold text-gray-800 text-left">내 프로필</h3>
+                        <p className="text-gray-600 text-left text-base">계정 정보를 확인하고 관리하세요</p>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-                    <div className="bg-gray-50 rounded-lg p-3 md:p-4">
-                        <div className="flex items-center space-x-2 md:space-x-3 text-gray-700 mb-2">
-                            <UserIcon className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
-                            <span className="font-semibold text-xs md:text-sm text-gray-600 text-left">사용자 ID</span>
+                <div className="grid grid-cols-2 gap-6 mb-8">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center space-x-3 text-gray-700 mb-2">
+                            <UserIcon className="h-5 w-5 text-red-500" />
+                            <span className="font-semibold text-sm text-gray-600 text-left">사용자 ID</span>
                         </div>
-                        <span className="text-base md:text-lg font-medium text-gray-800 text-left">{userId}</span>
+                        <span className="text-lg font-medium text-gray-800 text-left">{userId}</span>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 md:p-4">
-                        <div className="flex items-center space-x-2 md:space-x-3 text-gray-700 mb-2">
-                            <Mail className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
-                            <span className="font-semibold text-xs md:text-sm text-gray-600 text-left">이메일</span>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center space-x-3 text-gray-700 mb-2">
+                            <Mail className="h-5 w-5 text-red-500" />
+                            <span className="font-semibold text-sm text-gray-600 text-left">이메일</span>
                         </div>
-                        <span className="text-base md:text-lg font-medium text-gray-800 text-left">{userEmail}</span>
+                        <span className="text-lg font-medium text-gray-800 text-left">{userEmail}</span>
                     </div>
                 </div>
 
                 {/* 프로필 수정과 회원 탈퇴 버튼을 한 행에 배치 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 gap-4">
                     <button
                         onClick={() => setShowProfileEditModal(true)}
-                        className="bg-gradient-to-r from-red-500 to-red-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 md:space-x-3 group text-sm md:text-base"
+                        className="bg-gradient-to-r from-red-500 to-red-600 text-white py-4 px-6 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 group text-base"
                     >
-                        <Edit className="h-4 w-4 md:h-5 md:w-5 group-hover:rotate-12 transition-transform" />
+                        <Edit className="h-5 w-5 group-hover:rotate-12 transition-transform" />
                         <span>프로필 수정</span>
                     </button>
                     <button
                         onClick={() => setShowDeleteAccountModal(true)}
-                        className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold hover:from-gray-200 hover:to-gray-300 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 md:space-x-3 group border border-gray-300 text-sm md:text-base"
+                        className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 py-4 px-6 rounded-lg font-bold hover:from-gray-200 hover:to-gray-300 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3 group border border-gray-300 text-base"
                     >
-                        <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-red-500 group-hover:scale-110 transition-transform" />
+                        <Trash2 className="h-5 w-5 text-red-500 group-hover:scale-110 transition-transform" />
                         <span>회원 탈퇴</span>
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8 mt-6 md:mt-8">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 text-left">사용자 활동 로그</h3>
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mt-8">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 text-left">사용자 활동 로그</h3>
                 {userActivityLogs.length === 0 ? (
-                    <div className="text-center py-8 md:py-12">
-                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                            <Sparkles className="h-8 w-8 md:h-10 md:w-10 text-gray-600" />
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Sparkles className="h-10 w-10 text-gray-600" />
                         </div>
-                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4">첫 번째 활동을 기록해보세요!</h3>
-                        <p className="text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed text-sm md:text-base">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4">첫 번째 활동을 기록해보세요!</h3>
+                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
                             YouTube 영상을 요약하면<br />
                             <span className="font-semibold text-gray-600">활동 로그</span>에 기록됩니다.
                         </p>
 
-                        <div className="flex flex-col gap-3 md:gap-4 justify-center items-center">
+                        <div className="flex flex-col gap-4 justify-center items-center">
                             <button
                                 onClick={() => window.location.href = '/'}
-                                className="bg-gray-500 text-white py-2 md:py-3 px-6 md:px-8 rounded-lg font-bold hover:bg-gray-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-sm md:text-base"
+                                className="bg-gray-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-gray-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-base"
                             >
-                                <Play className="h-4 w-4 md:h-5 md:w-5" />
+                                <Play className="h-5 w-5" />
                                 <span>영상 요약하기</span>
                             </button>
-                            <div className="flex items-center space-x-2 text-xs md:text-sm text-gray-500">
-                                <User className="h-3 w-3 md:h-4 md:w-4" />
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <User className="h-4 w-4" />
                                 <span>활동 기록</span>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <ul className="space-y-3 md:space-y-4">
+                    <ul className="space-y-4">
                         {userActivityLogs.slice(0, 5).map((item) => ( // Display up to 5 recent logs
-                            <li key={item.id} className="flex items-center space-x-2 md:space-x-3 p-2 md:p-3 bg-gray-50 rounded-lg">
-                                <Play className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
-                                <span className="text-gray-700 font-medium truncate text-sm md:text-base">{item.title}</span>
-                                <span className="text-gray-500 text-xs md:text-sm">{item.date}</span>
+                            <li key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <Play className="h-5 w-5 text-red-500" />
+                                <span className="text-gray-700 font-medium truncate text-base">{item.title}</span>
+                                <span className="text-gray-500 text-sm">{item.date}</span>
                             </li>
                         ))}
                         {userActivityLogs.length > 5 && (
-                            <li className="text-center text-gray-600 text-xs md:text-sm">
+                            <li className="text-center text-gray-600 text-sm">
                                 ... 더 많은 활동이 있습니다.
                             </li>
                         )}

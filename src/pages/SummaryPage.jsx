@@ -86,27 +86,27 @@ export default function SummaryPage() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
+        <div className="max-w-6xl mx-auto p-6 space-y-8">
             {summaryData ? (
-                <div className="space-y-4 md:space-y-6">
+                <div className="space-y-6">
                     <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
-                        <div className="p-4 md:p-6 border-b space-y-2">
+                        <div className="p-6 border-b space-y-2">
                             {/* 썸네일 + 제목 + 업로더 + 조회수 */}
-                            <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+                            <div className="flex items-start gap-4">
                                 {summaryData.thumbnailUrl && (
-                                    <img src={summaryData.thumbnailUrl} alt="썸네일" className="w-full md:w-32 h-auto md:h-20 object-cover rounded-lg shadow" />
+                                    <img src={summaryData.thumbnailUrl} alt="썸네일" className="w-32 h-20 object-cover rounded-lg shadow" />
                                 )}
-                                <div className="text-left w-full md:w-auto">
-                                    <h3 className="text-lg md:text-xl font-bold text-gray-800 break-words">{summaryData.title || '제목 없음'}</h3>
-                                    <p className="text-xs md:text-sm text-gray-500">업로더: {summaryData.uploaderName || '알 수 없음'}</p>
+                                <div className="text-left">
+                                    <h3 className="text-xl font-bold text-gray-800 break-words">{summaryData.title || '제목 없음'}</h3>
+                                    <p className="text-sm text-gray-500">업로더: {summaryData.uploaderName || '알 수 없음'}</p>
                                     {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
-                                        <p className="text-xs md:text-sm text-gray-500">조회수: {summaryData.viewCount.toLocaleString()}회</p>
+                                        <p className="text-sm text-gray-500">조회수: {summaryData.viewCount.toLocaleString()}회</p>
                                     )}
                                 </div>
                             </div>
 
                             {/* 요약 본문 */}
-                            <div className="mt-4 prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed bg-green-50 p-3 md:p-4 rounded-lg border border-green-100 text-sm md:text-base">
+                            <div className="mt-4 prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed bg-green-50 p-4 rounded-lg border border-green-100 text-base">
                                 {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
                             </div>
 
@@ -116,7 +116,7 @@ export default function SummaryPage() {
                                     {summaryData.tags.map(tag => (
                                         <span
                                             key={tag}
-                                            className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 md:px-3 py-1 rounded-full"
+                                            className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full"
                                         >
                                             #{tag}
                                         </span>
@@ -128,33 +128,33 @@ export default function SummaryPage() {
 
                     <button
                         onClick={reset}
-                        className="w-full bg-blue-50 text-blue-700 py-3 px-6 md:px-8 rounded-lg hover:bg-blue-100 transition duration-200 ease-in-out border border-blue-200 font-medium text-sm md:text-base"
+                        className="w-full bg-blue-50 text-blue-700 py-3 px-8 rounded-lg hover:bg-blue-100 transition duration-200 ease-in-out border border-blue-200 font-medium text-base"
                     >
                         새로운 요약하기
                     </button>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 space-y-6">
                     {/* 로그인 안내 메시지 */}
                     {!isLoggedIn && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                             <div className="flex items-center space-x-3">
-                                <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-blue-600 flex-shrink-0" />
+                                <Sparkles className="h-5 w-5 text-blue-600 flex-shrink-0" />
                                 <div className="text-left">
-                                    <h3 className="text-xs md:text-sm font-semibold text-blue-800">로그인이 필요합니다</h3>
-                                    <p className="text-xs md:text-sm text-blue-700 mt-1">영상 요약 기능을 이용하려면 로그인해주세요.</p>
+                                    <h3 className="text-sm font-semibold text-blue-800">로그인이 필요합니다</h3>
+                                    <p className="text-sm text-blue-700 mt-1">영상 요약 기능을 이용하려면 로그인해주세요.</p>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     <div>
-                        <label htmlFor="summaryType" className="block text-xs md:text-sm font-semibold text-gray-700 mb-2 text-left">요약 타입</label>
+                        <label htmlFor="summaryType" className="block text-sm font-semibold text-gray-700 mb-2 text-left">요약 타입</label>
                         <select
                             id="summaryType"
                             value={summaryType}
                             onChange={e => setSummaryType(e.target.value)}
-                            className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-sm md:text-base"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-base"
                         >
                             {summaryTypesOptions.map(type => (
                                 <option key={type} value={type}>{type}</option>
@@ -163,39 +163,39 @@ export default function SummaryPage() {
                     </div>
 
                     <div>
-                        <label htmlFor="userPurpose" className="block text-xs md:text-sm font-semibold text-gray-700 mb-2 text-left">사용자 목적 (선택 사항)</label>
+                        <label htmlFor="userPurpose" className="block text-sm font-semibold text-gray-700 mb-2 text-left">사용자 목적 (선택 사항)</label>
                         <textarea
                             id="userPurpose"
                             value={userPurpose}
                             onChange={e => setUserPurpose(e.target.value)}
                             placeholder="어떤 목적으로 이 영상을 요약하고 싶으신가요? 예: '초보자를 위한 핵심 개념 위주로 요약해줘', '장점과 단점을 비교 분석해줘'"
-                            className="w-full border rounded-lg px-3 md:px-4 py-2 md:py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-sm md:text-base"
+                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-base"
                             rows={3}
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="youtubeUrl" className="block text-xs md:text-sm font-semibold text-gray-700 mb-2 text-left">유튜브 URL</label>
+                        <label htmlFor="youtubeUrl" className="block text-sm font-semibold text-gray-700 mb-2 text-left">유튜브 URL</label>
                         <input
                             id="youtubeUrl"
                             type="url"
                             value={youtubeUrl}
                             onChange={e => setYoutubeUrl(e.target.value)}
                             placeholder="예: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                            className="w-full border rounded-lg px-3 md:px-4 py-2 md:py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-sm md:text-base"
+                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-base"
                         />
                     </div>
 
-                    {error && <div className="text-red-500 text-xs md:text-sm mt-4 text-left">{error}</div>}
+                    {error && <div className="text-red-500 text-sm mt-4 text-left">{error}</div>}
 
                     <button
                         onClick={handleSubmit}
                         disabled={isLoading || !youtubeUrl.trim() || !isLoggedIn}
-                        className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out flex items-center justify-center gap-2 text-sm md:text-base"
+                        className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out flex items-center justify-center gap-2 text-base"
                     >
                         {isLoading ? (
                             <>
-                                <svg className="animate-spin h-4 w-4 md:h-5 md:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
