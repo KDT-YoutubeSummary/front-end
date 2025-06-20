@@ -26,6 +26,7 @@ function AppContent() {
     // --- 상태(State) 관리 ---
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken'));
     const [globalUserName, setGlobalUserName] = useState(localStorage.getItem('username') || 'Guest');
+    const [globalUserId, setGlobalUserId] = useState(localStorage.getItem('userId') || null);
 
     // 모달 상태
     const [showMessageModal, setShowMessageModal] = useState(false);
@@ -37,7 +38,7 @@ function AppContent() {
     const handleLoginSubmit = async (userName, password) => {
         try {
             // 인증 API 사용
-            const response = await axios.post('http://localhost:8080/api/auth/login', { email: userName, password });
+            const response = await axios.post('http://localhost:8080/api/auth/login',  { userName: userName, password: password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
                 localStorage.setItem('accessToken', accessToken);
@@ -46,6 +47,7 @@ function AppContent() {
 
                 setIsLoggedIn(true);
                 setGlobalUserName(username);
+                setGlobalUserId(userId);
                 handleAppShowMessage('로그인 성공!');
                 navigate('/');
             }
@@ -65,13 +67,14 @@ function AppContent() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = (message = '로그아웃 되었습니다.') => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
         setIsLoggedIn(false);
         setGlobalUserName('Guest');
-        handleAppShowMessage('로그아웃 되었습니다.');
+        setGlobalUserId(null);
+        handleAppShowMessage(message);
         navigate('/');
     };
 
@@ -80,16 +83,64 @@ function AppContent() {
         setShowMessageModal(true);
     };
 
+    // ✅ 모든 axios 요청에 공통 인증 헤더를 추가하는 인터셉터 설정
+    const setupAxiosInterceptors = () => {
+        axios.interceptors.request.use(
+            (config) => {
+                const token = localStorage.getItem('accessToken');
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
+
+        // ✅ 응답 인터셉터: 401/403 에러 발생 시 자동 처리
+        axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                const { response: errorResponse } = error;
+                if (errorResponse) {
+                    if (errorResponse.status === 401) {
+                        // 401 Unauthorized: 인증 토큰이 없거나 만료되었을 때
+                        // 로그인 페이지로 리다이렉트하거나 재인증 모달을 띄울 수 있습니다.
+                        handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
+                        // 또는: setShowReauthModal(true);
+                    } else if (errorResponse.status === 403) {
+                        // 403 Forbidden: 권한이 없을 때
+                        handleAppShowMessage('접근 권한이 없습니다.');
+                        // 필요한 경우 홈으로 리다이렉트: navigate('/');
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+    };
+
+    // --- useEffects ---
+    // 컴포넌트 마운트 시 한 번만 axios 인터셉터 설정
+    useEffect(() => {
+        setupAxiosInterceptors();
+    }, []); // 빈 배열은 마운트 시 한 번만 실행됨을 의미
+
+
     // --- useEffects ---
     // 페이지 이동 시마다 로그인 상태를 다시 확인 (소셜 로그인 리다이렉트 포함)
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
+        const storedUserId = localStorage.getItem('userId');
+        const storedUserName = localStorage.getItem('username');
         if (token) {
             setIsLoggedIn(true);
             setGlobalUserName(localStorage.getItem('username') || 'User');
+            setGlobalUserId(storedUserId || null);
         } else {
             setIsLoggedIn(false);
             setGlobalUserName('Guest');
+            setGlobalUserId(null);
         }
 
         // 소셜 로그인 성공 메시지 처리
@@ -164,7 +215,16 @@ function AppContent() {
                         <Route path="/" element={<SummaryPage />} />
 
                         <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect />} />
-                        <Route path="/reminders" element={isLoggedIn ? <ReminderPage /> : <AuthRedirect />} />
+                        <Route path="/reminders"
+                               element={isLoggedIn ? (
+                                   <ReminderPage
+                                       userId={globalUserId} // userId prop 전달
+                                       isLoggedIn={isLoggedIn} // isLoggedIn prop 전달
+                                       setMessageModalContent={setMessageModalContent} // 메시지 모달 관련 props 전달
+                                       setShowMessageModal={setShowMessageModal} // 메시지 모달 관련 props 전달
+                                   />
+                               ) : <AuthRedirect />}
+                        />
                         <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect />} />
 
                         <Route path="/mypage" element={isLoggedIn ? <MyPage isLoggedIn={isLoggedIn} onUpdateGlobalUserDisplay={setGlobalUserName} onShowMessage={handleAppShowMessage} onShowReauthModal={setShowReauthModal} onSetReauthCallback={setReauthCallback} onUserLoggedOut={handleLogout} /> : <AuthRedirect />} />

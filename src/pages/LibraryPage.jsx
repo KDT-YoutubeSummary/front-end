@@ -136,7 +136,7 @@ const LibraryPage = () => {
     // --- 통계 데이터 조회 함수 ---
     const fetchTagStats = useCallback(async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/library/stat/tags', getAuthHeader());
+            const res = await axios.get('http://localhost:8080/api/libraries/stat/tags', getAuthHeader());
             setTagStatsData(res.data.data.map(item => ({ name: item.tag, value: item.count })));
         } catch (err) { console.error('❌ 태그 통계 조회 실패:', err); }
     }, []);
@@ -146,7 +146,7 @@ const LibraryPage = () => {
         const fetchLibraryItems = async () => {
             setIsSearching(true);
             try {
-                let url = 'http://localhost:8080/api/library';
+                let url = 'http://localhost:8080/api/libraries';
                 const params = new URLSearchParams();
                 if (librarySearchTerm) params.append('title', librarySearchTerm);
                 if (libraryFilterTag) params.append('tags', libraryFilterTag);
@@ -200,7 +200,7 @@ const LibraryPage = () => {
         const fetchDetailIfNeeded = async () => {
             if (selectedItemId && selectedLibraryItem && selectedLibraryItem.summary === '상세 정보를 보려면 클릭하세요.') {
                 try {
-                    const res = await axios.get(`http://localhost:8080/api/library/${selectedItemId}`, getAuthHeader());
+                    const res = await axios.get(`http://localhost:8080/api/libraries/${selectedItemId}`, getAuthHeader());
                     const detailedData = res.data.data;
                     setLibraryItems(prevItems =>
                         prevItems.map(item =>
@@ -226,7 +226,7 @@ const LibraryPage = () => {
 
     const handleSaveUserNotes = async (itemId, notes) => {
         try {
-            await axios.patch('http://localhost:8080/api/library/note', { user_library_id: itemId, user_notes: notes }, getAuthHeader());
+            await axios.patch('http://localhost:8080/api/libraries/notes', { user_library_id: itemId, user_notes: notes }, getAuthHeader());
             setMessageModalContent('메모가 성공적으로 저장되었습니다!');
             setShowMessageModal(true);
             setLibraryItems(prev => prev.map(item => item.id === itemId ? { ...item, userNotes: notes } : item));
@@ -239,7 +239,7 @@ const LibraryPage = () => {
     const handleDeleteLibraryItem = async (itemId) => {
         if (!window.confirm('정말로 이 요약본을 삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`http://localhost:8080/api/library/${itemId}`, getAuthHeader());
+            await axios.delete(`http://localhost:8080/api/libraries/${itemId}`, getAuthHeader());
             setMessageModalContent('요약본이 성공적으로 삭제되었습니다!');
             setShowMessageModal(true);
             setLibraryItems(prev => prev.filter(item => item.id !== itemId));
@@ -277,11 +277,11 @@ const LibraryPage = () => {
         };
 
         try {
-            await axios.post('http://localhost:8080/api/reminder', payload, getAuthHeader());
+            await axios.post('http://localhost:8080/api/reminders', payload, getAuthHeader());
 
             let recommendationMessage = "\n\n하지만 추천 영상 생성에는 실패했습니다.";
             try {
-                await axios.post(`http://localhost:8080/api/recommendation/ai/${reminderItem.id}`, {}, getAuthHeader());
+                await axios.post(`http://localhost:8080/api/recommendations/ai/${reminderItem.id}`, {}, getAuthHeader());
                 recommendationMessage = "\n\n또한, 5개의 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
             } catch (recError) { console.error("❌ 추천 영상 생성 API 호출 실패:", recError); }
 
