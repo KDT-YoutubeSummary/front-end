@@ -6,7 +6,7 @@ import axios from 'axios';
 
 // CSS 및 아이콘 임포트
 import './App.css';
-import { Home, Library, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings } from 'lucide-react';
+import { Home, Library, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings, Menu, X } from 'lucide-react';
 
 // 페이지 및 모달 컴포넌트 임포트
 import LibraryPage from './pages/LibraryPage.jsx';
@@ -35,6 +35,8 @@ function AppContent() {
     const [messageModalContent, setMessageModalContent] = useState('');
     const [showReauthModal, setShowReauthModal] = useState(false);
     const [reauthCallback, setReauthCallback] = useState(null);
+    const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
@@ -54,7 +56,25 @@ function AppContent() {
                 navigate('/');
             }
         } catch (error) {
-            handleAppShowMessage(error.response?.data?.message || '로그인 오류가 발생했습니다.');
+            // 서버 응답에 따른 구체적인 오류 메시지 처리
+            if (error.response) {
+                const { status, data } = error.response;
+                if (status === 401) {
+                    if (data.message && data.message.includes('존재하지 않는')) {
+                        handleAppShowMessage('존재하지 않는 사용자입니다. 회원가입을 먼저 진행해주세요.');
+                    } else if (data.message && data.message.includes('비밀번호')) {
+                        handleAppShowMessage('비밀번호가 올바르지 않습니다.');
+                    } else {
+                        handleAppShowMessage('아이디 또는 비밀번호가 올바르지 않습니다.');
+                    }
+                } else if (status === 400) {
+                    handleAppShowMessage(data.message || '로그인 정보를 확인해주세요.');
+                } else {
+                    handleAppShowMessage(data.message || '로그인 중 오류가 발생했습니다.');
+                }
+            } else {
+                handleAppShowMessage('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+            }
         }
     };
 
@@ -70,14 +90,25 @@ function AppContent() {
     };
 
     const handleLogout = (message = '로그아웃 되었습니다.') => {
+        console.log('로그아웃 시작');
+        
+        // localStorage 정리
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
+        
+        // 상태 업데이트
         setIsLoggedIn(false);
         setGlobalUserName('Guest');
         setGlobalUserId(null);
+        
+        console.log('로그아웃 완료, 상태:', { isLoggedIn: false, userName: 'Guest' });
+        
+        // 메시지 표시
         handleAppShowMessage(message);
-        navigate('/');
+        
+        // 요약 홈페이지로 이동
+        navigate('/', { replace: true });
     };
 
     const handleAppShowMessage = (message) => {
@@ -154,11 +185,11 @@ function AppContent() {
     }, [location.key, location.state, navigate]); // location.key, location.state, navigate가 변경될 때마다 실행
 
     const menuItems = [
-        { id: 'main', path: '/', icon: Home, label: '요약 페이지' },
-        { id: 'library', path: '/library', icon: Library, label: '라이브러리' },
-        { id: 'reminder', path: '/reminders', icon: Bell, label: '리마인더 페이지' },
-        { id: 'recommendation', path: '/recommendation', icon: Lightbulb, label: '추천 페이지' },
-        { id: 'mypage', path: '/mypage', icon: User, label: '마이페이지' }
+        { id: 'summary', label: '영상 요약', path: '/', icon: FileText },
+        { id: 'library', label: '라이브러리', path: '/library', icon: Library },
+        { id: 'reminders', label: '리마인더', path: '/reminders', icon: Bell },
+        { id: 'recommendation', label: '추천', path: '/recommendation', icon: Lightbulb },
+        { id: 'mypage', label: '마이페이지', path: '/mypage', icon: User },
     ];
 
     const getCurrentPageLabel = () => {
@@ -169,34 +200,63 @@ function AppContent() {
 
     return (
         <div className="flex min-h-screen w-full bg-gray-50 font-inter">
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <nav className="w-20 md:w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col">
+            <nav className={`fixed md:relative w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col z-50 transform transition-transform duration-300 ease-in-out ${
+                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            }`}>
                 <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
-                    <Link to="/" className="flex items-center space-x-2 justify-center md:justify-start">
+                    <Link to="/" className="flex items-center space-x-2 justify-start" onClick={() => setIsMobileMenuOpen(false)}>
                         <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center shadow-md">
                             <Play className="h-5 w-5 md:h-6 md:w-6 text-white fill-current" />
                         </div>
-                        <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
+                        <h1 className="text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
                     </Link>
                 </div>
                 <div className="mt-4 flex-grow">
                     {menuItems.map((item) => (
-                        <Link key={item.id} to={item.path} className={`w-full flex items-center justify-center md:justify-start space-x-3 px-3 py-3 md:px-6 md:py-4 text-left transition-all duration-200 ease-in-out ${location.pathname === item.path ? 'bg-red-100 text-red-700 border-r-4 border-red-500 font-semibold' : 'text-gray-700 hover:bg-red-50'}`}>
+                        <Link 
+                            key={item.id} 
+                            to={item.path} 
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`w-full flex items-center justify-start space-x-3 px-3 py-3 md:px-6 md:py-4 text-left transition-all duration-200 ease-in-out ${
+                                location.pathname === item.path 
+                                    ? 'bg-red-100 text-red-700 border-r-4 border-red-500 font-semibold' 
+                                    : 'text-gray-700 hover:bg-red-50'
+                            }`}
+                        >
                             <item.icon className="h-5 w-5" />
-                            <span className="hidden md:block">{item.label}</span>
+                            <span>{item.label}</span>
                         </Link>
                     ))}
                 </div>
                 <div className="mt-auto p-4">
                     {isLoggedIn ? (
-                        <button onClick={handleLogout} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-gray-700 hover:bg-gray-100 rounded-lg">
+                        <button 
+                            onClick={() => {
+                                setShowLogoutConfirmModal(true);
+                                setIsMobileMenuOpen(false);
+                            }} 
+                            className="w-full flex items-center justify-start space-x-3 p-3 text-left text-gray-700 hover:bg-gray-100 rounded-lg"
+                        >
                             <LogOut className="h-5 w-5" />
-                            <span className="hidden md:block font-medium">로그아웃</span>
+                            <span className="font-medium">로그아웃</span>
                         </button>
                     ) : (
-                        <Link to="/login" className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
+                        <Link 
+                            to="/login" 
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="w-full flex items-center justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg"
+                        >
                             <User className="h-5 w-5" />
-                            <span className="hidden md:block font-medium">로그인/회원가입</span>
+                            <span className="font-medium">로그인/회원가입</span>
                         </Link>
                     )}
                 </div>
@@ -204,82 +264,106 @@ function AppContent() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col w-full">
+                {/* Mobile Header */}
+                <div className="md:hidden bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                    </button>
+                    <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-md">
+                            <Play className="h-5 w-5 text-white fill-current" />
+                        </div>
+                        <h1 className="text-lg font-extrabold text-gray-800">YouSum</h1>
+                    </div>
+                    {isLoggedIn && (
+                        <button 
+                            onClick={() => navigate('/mypage')}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <User className="h-5 w-5" />
+                        </button>
+                    )}
+                </div>
+
                 {/* 기존 헤더 (페이지명 + 로그인된 유저 표시) */}
-                <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
+                <header className="hidden md:block bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-4 md:py-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                        <div className="flex items-center space-x-3 md:space-x-4">
                             {/* 페이지별 아이콘 */}
                             {location.pathname === '/' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                                    <FileText className="h-5 w-5 text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                    <FileText className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/library' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                                    <Library className="h-5 w-5 text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+                                    <Library className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/reminders' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                                    <Bell className="h-5 w-5 text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <Bell className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/recommendation' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                                    <Lightbulb className="h-5 w-5 text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <Lightbulb className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/mypage' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
-                                    <User className="h-5 w-5 text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                    <User className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                             )}
                             
-                            <div className="flex items-center space-x-4">
-                                <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
+                            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
+                                <h2 className="text-xl md:text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
                                 
                                 {/* 페이지별 설명과 기능 태그 */}
                                 {location.pathname === '/' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
-                                        <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full mt-1">
-                                            <Sparkles className="h-4 w-4" />
+                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
+                                        <span className="text-xs md:text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
+                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-red-600 bg-red-50 px-2 md:px-3 py-1 rounded-full w-fit">
+                                            <Sparkles className="h-3 w-3 md:h-4 md:w-4" />
                                             <span>AI 요약</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/library' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">저장된 영상 요약 관리</span>
-                                        <div className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-1">
-                                            <Play className="h-4 w-4" />
+                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
+                                        <span className="text-xs md:text-sm text-gray-600">저장된 영상 요약 관리</span>
+                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-yellow-600 bg-yellow-50 px-2 md:px-3 py-1 rounded-full w-fit">
+                                            <Play className="h-3 w-3 md:h-4 md:w-4" />
                                             <span>내 라이브러리</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/reminders' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">영상 복습 알림 관리</span>
-                                        <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
-                                            <Clock className="h-4 w-4" />
+                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
+                                        <span className="text-xs md:text-sm text-gray-600">영상 복습 알림 관리</span>
+                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-full w-fit">
+                                            <Clock className="h-3 w-3 md:h-4 md:w-4" />
                                             <span>스마트 알림</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/recommendation' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
-                                        <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
-                                            <TrendingUp className="h-4 w-4" />
+                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
+                                        <span className="text-xs md:text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
+                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-purple-600 bg-purple-50 px-2 md:px-3 py-1 rounded-full w-fit">
+                                            <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
                                             <span>개인화 추천</span>
                                         </div>
                                     </div>
                                 )}
                                 {location.pathname === '/mypage' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">개인 정보 및 계정 관리</span>
-                                        <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
-                                            <Settings className="h-4 w-4" />
+                                    <div className="flex flex-col sm:flex-row sm:items-end space-y-1 sm:space-y-0 sm:space-x-3">
+                                        <span className="text-xs md:text-sm text-gray-600">개인 정보 및 계정 관리</span>
+                                        <div className="flex items-center space-x-2 text-xs md:text-sm text-red-600 bg-red-50 px-2 md:px-3 py-1 rounded-full w-fit">
+                                            <Settings className="h-3 w-3 md:h-4 md:w-4" />
                                             <span>계정 설정</span>
                                         </div>
                                     </div>
@@ -287,23 +371,24 @@ function AppContent() {
                             </div>
                         </div>
                         
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-end">
                             {isLoggedIn ? (
                                 <button 
                                     onClick={() => navigate('/mypage')}
-                                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                                    className="flex items-center space-x-2 text-xs md:text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-2 md:px-3 py-2 rounded-lg transition-colors"
                                 >
-                                    <User className="h-4 w-4" />
-                                    <span>{globalUserName}님</span>
+                                    <User className="h-3 w-3 md:h-4 md:w-4" />
+                                    <span className="hidden sm:inline">{globalUserName}님</span>
+                                    <span className="sm:hidden">{globalUserName}</span>
                                 </button>
                             ) : (
-                                <div className="text-sm text-gray-500">로그인되지 않음</div>
+                                <div className="text-xs md:text-sm text-gray-500">로그인되지 않음</div>
                             )}
                         </div>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto bg-gray-100">
+                <main className="flex-1 overflow-y-scroll bg-gray-100">
                     <Routes>
                         {/* ✅ SummaryPage 컴포넌트를 직접 라우팅하여 백엔드 통신 로직이 실행되도록 합니다. */}
                         <Route path="/" element={
@@ -326,7 +411,20 @@ function AppContent() {
                         />
                         <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
 
-                        <Route path="/mypage" element={isLoggedIn ? <MyPage isLoggedIn={isLoggedIn} onUpdateGlobalUserDisplay={setGlobalUserName} onShowMessage={handleAppShowMessage} onShowReauthModal={setShowReauthModal} onSetReauthCallback={setReauthCallback} onUserLoggedOut={handleLogout} /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
+                        <Route path="/mypage" element={isLoggedIn ? (
+                            <MyPage 
+                                isLoggedIn={isLoggedIn} 
+                                onUpdateGlobalUserDisplay={(userName, email) => {
+                                    setGlobalUserName(userName);
+                                    localStorage.setItem('username', userName);
+                                    if (email) localStorage.setItem('email', email);
+                                }} 
+                                onShowMessage={handleAppShowMessage} 
+                                onShowReauthModal={setShowReauthModal} 
+                                onSetReauthCallback={setReauthCallback} 
+                                onUserLoggedOut={(message) => handleLogout(message || '로그아웃 되었습니다.')} 
+                            />
+                        ) : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
 
                         <Route path="/login" element={<AuthPage onLogin={handleLoginSubmit} onSignup={handleSignupSubmit} onMessage={handleAppShowMessage} />} />
                         <Route path="/oauth/redirect" element={<OAuth2RedirectHandler />} />
@@ -335,9 +433,27 @@ function AppContent() {
             </div>
 
             {/* 전역 모달들 */}
-            {/* isLoading 상태는 이제 SummaryPage 내부에서만 관리하므로 AppContent에서는 제거합니다. */}
-            {showMessageModal && (<MessageModal message={messageModalContent} onClose={() => setShowMessageModal(false)} />)}
-            {showReauthModal && (<ReauthModal onClose={() => setShowReauthModal(false)} onReauthenticate={(password, cb) => { if (reauthCallback) reauthCallback(password, cb); setShowReauthModal(false); }} />)}
+            {showMessageModal && (
+                <MessageModal
+                    message={messageModalContent}
+                    onClose={() => setShowMessageModal(false)}
+                />
+            )}
+            {showReauthModal && (
+                <ReauthModal
+                    onClose={() => setShowReauthModal(false)}
+                    onReauthenticate={reauthCallback}
+                />
+            )}
+            {showLogoutConfirmModal && (
+                <LogoutConfirmModal
+                    onConfirm={() => {
+                        handleLogout();
+                        setShowLogoutConfirmModal(false);
+                    }}
+                    onCancel={() => setShowLogoutConfirmModal(false)}
+                />
+            )}
         </div>
     );
 }
@@ -350,6 +466,45 @@ function AuthRedirect({ onShowMessage }) {
     }, [navigate, onShowMessage]);
     return null;
 }
+
+// --- 로딩 모달 컴포넌트 ---
+const LoadingModal = ({ message }) => {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-auto text-center animate-fade-in-up">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-red-500 mx-auto mb-6"></div>
+                <h3 className="text-lg font-semibold text-gray-800">{message}</h3>
+                <p className="text-gray-500 text-sm mt-2">잠시만 기다려주세요...</p>
+            </div>
+        </div>
+    );
+};
+
+// --- 로그아웃 확인 모달 컴포넌트 ---
+const LogoutConfirmModal = ({ onConfirm, onCancel }) => {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-auto text-center animate-fade-in-up">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">로그아웃</h3>
+                <p className="text-gray-600 mb-6">정말 로그아웃하시겠습니까?</p>
+                <div className="flex space-x-3">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                    >
+                        취소
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 bg-red-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-red-600 transition-colors"
+                    >
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // 최종 App 컴포넌트
 function App() {

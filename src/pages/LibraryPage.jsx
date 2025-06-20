@@ -132,14 +132,22 @@ const LibraryPage = () => {
     const [showTagStats, setShowTagStats] = useState(false);
     const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98FB98', '#DA70D6', '#FFD700'];
 
-    const getAuthHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` } });
-
     // --- 통계 데이터 조회 함수 ---
     const fetchTagStats = useCallback(async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/libraries/stat/tags', getAuthHeader());
+            const headers = {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            };
+            const res = await axios.get('http://localhost:8080/api/libraries/stat/tags', { headers });
             setTagStatsData(res.data.data.map(item => ({ name: item.tag, value: item.count })));
-        } catch (err) { console.error('❌ 태그 통계 조회 실패:', err); }
+        } catch (err) { 
+            console.error('❌ 태그 통계 조회 실패:', err);
+            // 인증 오류 시 로그인 페이지로 리다이렉트
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                window.location.href = '/login';
+            }
+        }
     }, []);
 
     // --- 라이브러리 목록 조회 (검색 및 필터링) ---
@@ -151,23 +159,38 @@ const LibraryPage = () => {
                 const params = new URLSearchParams();
                 if (librarySearchTerm) params.append('title', librarySearchTerm);
                 if (libraryFilterTag) params.append('tags', libraryFilterTag);
-                if (params.toString()) url = `http://localhost:8080/api/library/search?${params.toString()}`;
+                if (params.toString()) url = `http://localhost:8080/api/libraries/search?${params.toString()}`;
 
-                const res = await axios.get(url, getAuthHeader());
-                setLibraryItems(res.data.data.map(item => ({
-                    id: item.library_id,
-                    title: item.video_title,
-                    hashtags: item.tags,
-                    date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
-                    userNotes: item.user_notes,
-                    thumbnail: getYoutubeThumbnailUrl(getYoutubeIdFromUrl(item.original_url)),
-                    uploader: '정보 없음',
-                    views: '정보 없음',
-                    summary: '상세 정보를 보려면 클릭하세요.',
-                    original_url: item.original_url,
-                })));
+                // 인증 헤더를 명시적으로 포함
+                const headers = {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                    'Content-Type': 'application/json'
+                };
+
+                const res = await axios.get(url, { headers });
+                const sortedData = res.data.data
+                    .sort((a, b) => new Date(b.saved_at) - new Date(a.saved_at)) // 최신순 정렬
+                    .map(item => ({
+                        id: item.library_id,
+                        title: item.video_title,
+                        hashtags: item.tags,
+                        date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
+                        userNotes: item.user_notes,
+                        thumbnail: getYoutubeThumbnailUrl(getYoutubeIdFromUrl(item.original_url)),
+                        uploader: '정보 없음',
+                        views: '정보 없음',
+                        summary: '상세 정보를 보려면 클릭하세요.',
+                        original_url: item.original_url,
+                    }));
+                setLibraryItems(sortedData);
                 fetchTagStats();
-            } catch (err) { console.error('❌ 라이브러리 조회 실패:', err); }
+            } catch (err) { 
+                console.error('❌ 라이브러리 조회 실패:', err);
+                // 인증 오류 시 로그인 페이지로 리다이렉트
+                if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                    window.location.href = '/login';
+                }
+            }
             finally { setIsSearching(false); }
         };
         const handler = setTimeout(fetchLibraryItems, 300);
@@ -201,7 +224,11 @@ const LibraryPage = () => {
         const fetchDetailIfNeeded = async () => {
             if (selectedItemId && selectedLibraryItem && selectedLibraryItem.summary === '상세 정보를 보려면 클릭하세요.') {
                 try {
-                    const res = await axios.get(`http://localhost:8080/api/libraries/${selectedItemId}`, getAuthHeader());
+                    const headers = {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                        'Content-Type': 'application/json'
+                    };
+                    const res = await axios.get(`http://localhost:8080/api/libraries/${selectedItemId}`, { headers });
                     const detailedData = res.data.data;
                     setLibraryItems(prevItems =>
                         prevItems.map(item =>
@@ -227,7 +254,11 @@ const LibraryPage = () => {
 
     const handleSaveUserNotes = async (itemId, notes) => {
         try {
-            await axios.patch('http://localhost:8080/api/libraries/notes', { user_library_id: itemId, user_notes: notes }, getAuthHeader());
+            const headers = {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            };
+            await axios.patch('http://localhost:8080/api/libraries/notes', { user_library_id: itemId, user_notes: notes }, { headers });
             setMessageModalContent('메모가 성공적으로 저장되었습니다!');
             setShowMessageModal(true);
             setLibraryItems(prev => prev.map(item => item.id === itemId ? { ...item, userNotes: notes } : item));
@@ -240,7 +271,11 @@ const LibraryPage = () => {
     const handleDeleteLibraryItem = async (itemId) => {
         if (!window.confirm('정말로 이 요약본을 삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`http://localhost:8080/api/libraries/${itemId}`, getAuthHeader());
+            const headers = {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            };
+            await axios.delete(`http://localhost:8080/api/libraries/${itemId}`, { headers });
             setMessageModalContent('요약본이 성공적으로 삭제되었습니다!');
             setShowMessageModal(true);
             setLibraryItems(prev => prev.filter(item => item.id !== itemId));
@@ -280,11 +315,15 @@ const LibraryPage = () => {
         };
 
         try {
-            await axios.post('http://localhost:8080/api/reminders', payload, getAuthHeader());
+            const headers = {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                'Content-Type': 'application/json'
+            };
+            await axios.post('http://localhost:8080/api/reminders', payload, { headers });
 
             let recommendationMessage = "\n\n하지만 추천 영상 생성에는 실패했습니다.";
             try {
-                await axios.post(`http://localhost:8080/api/recommendations/ai/${reminderItem.id}`, {}, getAuthHeader());
+                await axios.post(`http://localhost:8080/api/recommendations/ai/${reminderItem.id}`, {}, { headers });
                 recommendationMessage = "\n\n또한, 5개의 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
             } catch (recError) { 
                 console.error("❌ 추천 영상 생성 API 호출 실패:", recError); 
@@ -302,7 +341,7 @@ const LibraryPage = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-6 space-y-8">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
             <UserLibrary
                 libraryItems={libraryItems}
                 selectedLibraryItem={selectedLibraryItem}
@@ -340,4 +379,6 @@ const LibraryPage = () => {
     );
 };
 
-export default LibraryPage;
+// 명시적으로 LibraryPage를 default export
+const LibraryPageComponent = LibraryPage;
+export default LibraryPageComponent;

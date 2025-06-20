@@ -177,8 +177,23 @@ export const ReauthModal = ({ onClose, onReauthenticate }) => {
     const [message, setMessage] = useState('');
 
     const handleSubmit = () => {
+        if (!password.trim()) {
+            setMessage('비밀번호를 입력해주세요.');
+            return;
+        }
         setMessage(''); // 이전 메시지 초기화
-        onReauthenticate(password, onClose); // 재인증 후 콜백 실행
+        console.log('ReauthModal: 인증 버튼 클릭됨, 비밀번호:', password);
+        if (onReauthenticate) {
+            onReauthenticate(password, onClose); // 재인증 후 콜백 실행
+        } else {
+            console.error('ReauthModal: onReauthenticate 콜백이 없습니다.');
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSubmit();
+        }
     };
 
     return (
@@ -199,7 +214,9 @@ export const ReauthModal = ({ onClose, onReauthenticate }) => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onKeyPress={handleKeyPress}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
+                            placeholder="비밀번호를 입력하세요"
                         />
                     </div>
                     <div className="flex space-x-3 pt-4">

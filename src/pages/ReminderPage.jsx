@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Reminder from '../components/Reminder';
 import ReminderEditModal from '../components/ReminderEditModal';
 import { reminderApi } from '../services/api.jsx';
-import { Bell, Clock, Sparkles } from 'lucide-react';
+import { Bell, Clock, Sparkles, Search, Hash, Plus, Calendar } from 'lucide-react';
 
 // 확인된 문제 : 리마인더에 데이터가 호출되지 않는 문제
 //               콘솔에는 별 다른 출력이 없어서 디버깅이 힘듬
@@ -19,12 +19,44 @@ import { Bell, Clock, Sparkles } from 'lucide-react';
 const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessageModal }) => {
     // --- Reminder States ---
     const [reminders, setReminders] = useState([]);
+    const [filteredReminders, setFilteredReminders] = useState([]);
     const [showReminderEditModal, setShowReminderEditModal] = useState(false);
     const [editingReminder, setEditingReminder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    // --- Search States ---
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterTag, setFilterTag] = useState('');
+
     // --- Constants ---
     const reminderIntervalsOptions = ['반복하지 않음', '1일마다', '3일마다', '1주마다', '1달마다'];
+
+    // 검색 및 필터링 함수
+    const filterReminders = useCallback(() => {
+        let filtered = reminders;
+
+        // 제목 검색
+        if (searchTerm) {
+            filtered = filtered.filter(reminder =>
+                reminder.summaryTitle.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // 태그 필터링 (리마인더의 경우 태그 정보가 제한적이므로 제목에서 검색)
+        if (filterTag) {
+            filtered = filtered.filter(reminder =>
+                reminder.summaryTitle.toLowerCase().includes(filterTag.toLowerCase()) ||
+                reminder.summaryContent.toLowerCase().includes(filterTag.toLowerCase())
+            );
+        }
+
+        setFilteredReminders(filtered);
+    }, [reminders, searchTerm, filterTag]);
+
+    // 검색어나 필터가 변경될 때마다 필터링 적용
+    useEffect(() => {
+        filterReminders();
+    }, [filterReminders]);
 
     // 리마인더 삭제 핸들러
     const handleDeleteReminder = async (reminderId) => {
@@ -109,13 +141,18 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
         if (!userId) return;
 
         try {
-            setIsLoading(true);
+            // setIsLoading(true); // 페이지 로드 시 로딩 모달 제거
             const fetchedReminders = await reminderApi.getUserReminders(userId);
             console.log('로드된 리마인더 데이터:', fetchedReminders);
 
+            // 최신순으로 정렬
+            const sortedReminders = fetchedReminders.sort((a, b) => 
+                new Date(a.nextNotificationDatetime) - new Date(b.nextNotificationDatetime)
+            );
+
             // 각 리마인더에 대해 라이브러리 정보를 조회하여 영상 제목 가져오기
             const formattedReminders = await Promise.all(
-                fetchedReminders.map(async (reminder) => {
+                sortedReminders.map(async (reminder) => {
                     let videoTitle = `리마인더 ${reminder.reminderId}`;
                     let summaryContent = `알림 예정: ${new Date(reminder.nextNotificationDatetime).toLocaleString()}`;
                     let videoMetadata = {
@@ -185,7 +222,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
             setMessageModalContent(`리마인더 데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
             setShowMessageModal(true);
         } finally {
-            setIsLoading(false);
+            // setIsLoading(false); // 페이지 로드 시 로딩 모달 제거
         }
     };
 
@@ -239,34 +276,90 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     };
 
     return (
-        <div id="reminder-page" className="max-w-6xl mx-auto p-6 space-y-8">
+        <div id="reminder-page" className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8">
             {isLoading && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-auto text-center animate-fade-in-up">
-                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500 mx-auto mb-6"></div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">처리 중입니다</h3>
-                        <p className="text-gray-600">잠시만 기다려주세요...</p>
+                    <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 max-w-sm md:max-w-md w-full mx-auto text-center animate-fade-in-up">
+                        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-4 border-b-4 border-red-500 mx-auto mb-4 md:mb-6"></div>
+                        <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">처리 중입니다</h3>
+                        <p className="text-gray-600 text-sm md:text-base">잠시만 기다려주세요...</p>
                     </div>
                 </div>
             )}
 
             {reminders.length === 0 && !isLoading ? (
-                <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
-                    <p className="text-lg font-medium">설정된 리마인더가 없습니다.</p>
-                    <p className="text-sm">라이브러리에서 요약본에 대한 리마인더를 설정해보세요.</p>
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-8">
+                    <div className="text-center py-8 md:py-12">
+                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                            <Bell className="h-8 w-8 md:h-10 md:w-10 text-blue-600" />
+                        </div>
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4">첫 번째 리마인더를 설정해보세요!</h3>
+                        <p className="text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed text-sm md:text-base">
+                            라이브러리의 요약본에 리마인더를 설정하여<br />
+                            <span className="font-semibold text-blue-600">중요한 내용을 놓치지 않도록</span> 하세요.
+                        </p>
+
+                        <div className="flex flex-col gap-3 md:gap-4 justify-center items-center">
+                            <button
+                                onClick={() => window.location.href = '/library'}
+                                className="bg-blue-500 text-white py-2 md:py-3 px-6 md:px-8 rounded-lg font-bold hover:bg-blue-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-sm md:text-base"
+                            >
+                                <Plus className="h-4 w-4 md:h-5 md:w-5" />
+                                <span>라이브러리로 이동</span>
+                            </button>
+                            <div className="flex items-center space-x-2 text-xs md:text-sm text-gray-500">
+                                <Calendar className="h-3 w-3 md:h-4 md:w-4" />
+                                <span>리마인더 설정</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             ) : null}
 
             {reminders.length > 0 && (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                    {reminders.map((reminder) => (
-                        <Reminder
-                            key={reminder.id}
-                            reminder={reminder}
-                            onDelete={handleDeleteReminder}
-                            onEdit={handleEditReminder}
-                        />
-                    ))}
+                <div className="space-y-4 md:space-y-6">
+                    {/* Search and Filter Inputs */}
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 md:h-5 md:w-5"/>
+                            <input
+                                type="text"
+                                placeholder="요약 제목으로 검색..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 md:pl-10 pr-3 md:pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 text-sm md:text-base"
+                            />
+                        </div>
+                        <div className="flex-1 relative">
+                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 md:h-5 md:w-5"/>
+                            <input
+                                type="text"
+                                placeholder="태그로 필터링..."
+                                value={filterTag}
+                                onChange={(e) => setFilterTag(e.target.value)}
+                                className="w-full pl-10 md:pl-10 pr-3 md:pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 text-sm md:text-base"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Loading or No Results Message */}
+                    {filteredReminders.length === 0 && (searchTerm || filterTag) ? (
+                        <div className="text-center text-gray-500 p-6 md:p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                            <p className="text-base md:text-lg font-medium">검색 결과가 없습니다.</p>
+                            <p className="text-xs md:text-sm">다른 검색어나 태그를 시도해보세요.</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 md:p-6">
+                            {filteredReminders.map((reminder) => (
+                                <Reminder
+                                    key={reminder.id}
+                                    reminder={reminder}
+                                    onDelete={handleDeleteReminder}
+                                    onEdit={handleEditReminder}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 

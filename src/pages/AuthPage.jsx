@@ -36,7 +36,7 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
 
     return (
         // 이 컴포넌트는 이제 AuthModal 안에서 렌더링되므로, 페이지 전체 스타일은 필요 없습니다.
-        <div className="w-full">
+        <div className="w-full max-w-md mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
                 {mode === 'login' ? '로그인' : '회원가입'}
             </h2>
@@ -46,41 +46,80 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 아이디, 이메일, 비밀번호 입력 필드... (이전과 동일) */}
                 <div>
-                    <label htmlFor="auth-username" className="block text-gray-700 mb-1">아이디</label>
-                    <input id="auth-username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                    <label htmlFor="auth-username" className="block text-gray-700 mb-2 font-medium">아이디</label>
+                    <input 
+                        id="auth-username" 
+                        type="text" 
+                        value={username} 
+                        onChange={(e) => setUsername(e.target.value)} 
+                        required 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 transition-colors"
+                        placeholder="아이디를 입력하세요"
+                    />
                 </div>
                 {mode === 'signup' && (
                     <div>
-                        <label htmlFor="auth-email" className="block text-gray-700 mb-1">이메일</label>
-                        <input id="auth-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                        <label htmlFor="auth-email" className="block text-gray-700 mb-2 font-medium">이메일</label>
+                        <input 
+                            id="auth-email" 
+                            type="email" 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            required 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 transition-colors"
+                            placeholder="이메일을 입력하세요"
+                        />
                     </div>
                 )}
                 <div>
-                    <label htmlFor="auth-password" className="block text-gray-700 mb-1">비밀번호</label>
-                    <input id="auth-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                    <label htmlFor="auth-password" className="block text-gray-700 mb-2 font-medium">비밀번호</label>
+                    <input 
+                        id="auth-password" 
+                        type="password" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        required 
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 transition-colors"
+                        placeholder="비밀번호를 입력하세요"
+                    />
                 </div>
                 {mode === 'signup' && (
                     <div>
-                        <label htmlFor="auth-confirm-password" className="block text-gray-700 mb-1">비밀번호 확인</label>
-                        <input id="auth-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"/>
+                        <label htmlFor="auth-confirm-password" className="block text-gray-700 mb-2 font-medium">비밀번호 확인</label>
+                        <input 
+                            id="auth-confirm-password" 
+                            type="password" 
+                            value={confirmPassword} 
+                            onChange={(e) => setConfirmPassword(e.target.value)} 
+                            required 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 transition-colors"
+                            placeholder="비밀번호를 다시 입력하세요"
+                        />
                     </div>
                 )}
-                <button type="submit" className="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                <button 
+                    type="submit" 
+                    className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors mt-6"
+                >
                     {mode === 'login' ? '로그인' : '회원가입'}
                 </button>
             </form>
-            <div className="mt-4 text-center text-sm text-gray-600 space-y-3">
+            <div className="mt-6 text-center text-sm text-gray-600 space-y-4">
                 {/* 모드 전환 버튼 (이전과 동일) */}
                 <p>
                     {mode === 'login' ? '아직 계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
-                    <button type="button" className="text-red-500 hover:underline font-semibold" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
+                    <button 
+                        type="button" 
+                        className="text-red-500 hover:underline font-semibold" 
+                        onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                    >
                         {mode === 'login' ? '회원가입하기' : '로그인하기'}
                     </button>
                 </p>
 
                 <div className="relative flex items-center justify-center">
                     <div className="flex-grow border-t border-gray-300"></div>
-                    <span className="flex-shrink mx-4 text-gray-500">또는</span>
+                    <span className="flex-shrink mx-4 text-gray-500 text-xs">또는</span>
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
 
