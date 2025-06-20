@@ -36,8 +36,8 @@ function AppContent() {
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
         try {
-            // ✅ 로그인 API 경로 확인 (주석처리된 부분)
-            const response = await axios.post('http://localhost:8080/api/auth/login', { userName, password });
+            // 인증 API 사용
+            const response = await axios.post('http://localhost:8080/api/auth/login', { email: userName, password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
                 localStorage.setItem('accessToken', accessToken);
@@ -56,7 +56,7 @@ function AppContent() {
 
     const handleSignupSubmit = async (userName, password, email) => {
         try {
-            // ✅ 회원가입 API 경로 확인 (주석처리된 부분)
+            // 회원가입 API 사용
             await axios.post('http://localhost:8080/api/auth/register', { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
             navigate('/login');
@@ -202,3 +202,4 @@ function App() {
 }
 
 export default App;
+

@@ -45,12 +45,11 @@ export default function SummaryPage() {
             console.log('📝 Summary Type:', summaryTypeMap[summaryType]);
             console.log('🎯 User Prompt:', userPurpose?.trim() || '없음');
 
-            // ✅ 백엔드 API의 요청 DTO (TranscriptSaveRequestDTO) 필드에 맞춰 데이터 전송
-            //    text, transcriptId, userId 필드는 백엔드에서 직접 처리합니다.
-            const response = await axios.post('http://localhost:8080/api/youtube/upload', { // ✅ 백엔드 엔드포인트 경로 재확인
-                originalUrl: youtubeUrl,                              // ✅ YouTube URL 필드
-                summaryType: summaryTypeMap[summaryType],
+            // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
+            const response = await axios.post('http://localhost:8080/api/youtube/upload', {
+                originalUrl: youtubeUrl,
                 userPrompt: userPurpose?.trim() || null,
+                summaryType: summaryTypeMap[summaryType]
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`

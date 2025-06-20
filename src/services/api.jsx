@@ -18,6 +18,114 @@ export const setAuthToken = (token) => {
   }
 };
 
+// YouTube 메타데이터 관련 API 함수
+export const youtubeApi = {
+  // 영상 메타데이터 저장
+  saveMetadata: async (url) => {
+    try {
+      const response = await api.post('/api/youtube/save', { url });
+      return response.data;
+    } catch (error) {
+      console.error('영상 메타데이터 저장 실패:', error);
+      throw error;
+    }
+  },
+
+  // 영상 메타데이터 조회
+  getMetadata: async (url) => {
+    try {
+      const response = await api.get('/api/youtube/title', { params: { url } });
+      return response.data;
+    } catch (error) {
+      console.error('영상 메타데이터 조회 실패:', error);
+      throw error;
+    }
+  },
+
+  // 유튜브 영상 업로드 및 요약 요청
+  uploadVideo: async (originalUrl, userPrompt, summaryType) => {
+    try {
+      const response = await api.post('/api/youtube/upload', {
+        originalUrl,
+        userPrompt,
+        summaryType
+      });
+      return response.data;
+    } catch (error) {
+      console.error('유튜브 영상 업로드 실패:', error);
+      throw error;
+    }
+  }
+};
+
+// 인증 관련 API 함수
+export const authApi = {
+  // 일반 로그인
+  login: async (email, password) => {
+    try {
+      const response = await api.post('/api/auth/login', { email, password });
+      return response.data;
+    } catch (error) {
+      console.error('로그인 실패:', error);
+      throw error;
+    }
+  },
+
+  // 회원가입
+  register: async (userName, email, password) => {
+    try {
+      const response = await api.post('/api/auth/register', { userName, email, password });
+      return response.data;
+    } catch (error) {
+      console.error('회원가입 실패:', error);
+      throw error;
+    }
+  }
+};
+
+// 마이페이지 관련 API 함수
+export const myPageApi = {
+  // 마이페이지 정보 조회
+  getMyPageInfo: async () => {
+    try {
+      const response = await api.get('/api/mypage');
+      return response.data;
+    } catch (error) {
+      console.error('마이페이지 정보 조회 실패:', error);
+      throw error;
+    }
+  }
+};
+
+// 퀴즈 관련 API 함수
+export const quizApi = {
+  // 퀴즈 생성
+  generateQuiz: async (summaryId, count, difficulty) => {
+    try {
+      const response = await api.post('/api/quizzes/generate', {
+        summaryId,
+        count,
+        difficulty
+      });
+      return response.data;
+    } catch (error) {
+      console.error('퀴즈 생성 실패:', error);
+      throw error;
+    }
+  },
+
+  // 퀴즈 제출
+  submitQuiz: async (quizId, answers) => {
+    try {
+      const response = await api.post(`/api/quizzes/${quizId}/submit`, { answers });
+      return response.data;
+    } catch (error) {
+      console.error(`퀴즈(ID: ${quizId}) 제출 실패:`, error);
+      throw error;
+    }
+  }
+};
+
 // 리마인더 관련 API 함수
 export const reminderApi = {
   // 리마인더 생성

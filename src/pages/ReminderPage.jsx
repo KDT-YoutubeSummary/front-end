@@ -3,6 +3,9 @@ import Reminder from '../components/Reminder';
 import ReminderEditModal from '../components/ReminderEditModal';
 import { reminderApi } from '../services/api.jsx';
 
+// 확인된 문제 : 리마인더에 데이터가 호출되지 않는 문제
+//               콘솔에는 별 다른 출력이 없어서 디버깅이 힘듬
+
 /**
  * Reminder Page Component
  * Displays a list of all set reminders with expand, edit, and delete functionalities.
