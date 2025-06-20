@@ -14,7 +14,7 @@ const RecommendationPage = () => {
     // 컴포넌트가 화면에 표시되는지 감지
     const [isVisible, setIsVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [recommendedVideo, setRecommendedVideo] = useState(null);
+    const [recommendedVideos, setRecommendedVideos] = useState([]); // 복수의 추천 영상을 저장하도록 변경
     const [isDataFetched, setIsDataFetched] = useState(false);
 
     // 사용자 ID를 localStorage에서 가져옴
@@ -37,26 +37,23 @@ const RecommendationPage = () => {
             console.log('추천 영상 데이터:', recommendations); // 콘솔에 추천 영상 데이터 출력
 
             if (recommendations && recommendations.length > 0) {
-                // API 응답에서 첫 번째 추천 영상 정보를 사용
-                const latestRecommendation = recommendations[0];
-
-                // API 응답 구조 확인 및 필요한 형식으로 변환
-                // API 응답 구조는 { recommendedVideo: { title, originalUrl }, recommendationReason } 형태
-                const formattedRecommendation = {
-                    title: latestRecommendation.recommendedVideo?.title || '제목 없음',
-                    reason: latestRecommendation.recommendationReason || '추천 이유가 제공되지 않았습니다.',
-                    youtubeUrl: latestRecommendation.recommendedVideo?.originalUrl || '',
+                // 모든 추천 영상을 처리하여 배열에 저장
+                const formattedRecommendations = recommendations.map(recommendation => ({
+                    id: recommendation.id, // 추천 영상 ID 추가
+                    title: recommendation.recommendedVideo?.title || '제목 없음',
+                    reason: recommendation.recommendationReason || '추천 이유가 제공되지 않았습니다.',
+                    youtubeUrl: recommendation.recommendedVideo?.originalUrl || '',
                     // 추가 정보 (표시가 필요한 경우 Recommendation 컴포넌트도 수정 필요)
-                    uploaderName: latestRecommendation.recommendedVideo?.uploaderName || '',
-                    thumbnailUrl: latestRecommendation.recommendedVideo?.thumbnailUrl || '',
-                    viewCount: latestRecommendation.recommendedVideo?.viewCount || 0
-                };
+                    uploaderName: recommendation.recommendedVideo?.uploaderName || '',
+                    thumbnailUrl: recommendation.recommendedVideo?.thumbnailUrl || '',
+                    viewCount: recommendation.recommendedVideo?.viewCount || 0
+                }));
 
-                console.log('변환된 추천 영상:', formattedRecommendation); // 변환된 데이터 확인
-                setRecommendedVideo(formattedRecommendation);
+                console.log('변환된 추천 영상 목록:', formattedRecommendations); // 변환된 데이터 확인
+                setRecommendedVideos(formattedRecommendations);
             } else {
-                // 추천 영상이 없는 경우 null로 설정
-                setRecommendedVideo(null);
+                // 추천 영상이 없는 경우 빈 배열로 설정
+                setRecommendedVideos([]);
                 console.log('추천 영상이 없습니다.');
             }
         } catch (error) {
@@ -65,10 +62,10 @@ const RecommendationPage = () => {
             // 403 오류 발생 시 (권한 문제)
             if (error.response && error.response.status === 403) {
                 console.log('권한 오류가 발생했습니다.');
-                setRecommendedVideo(null);
+                setRecommendedVideos([]);
             } else {
                 // 다른 오류의 경우 메시지 표시
-                setRecommendedVideo(null);
+                setRecommendedVideos([]);
             }
         } finally {
             setIsLoading(false);
@@ -118,7 +115,7 @@ const RecommendationPage = () => {
             )}
 
             {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
-            {!isLoading && !recommendedVideo && isDataFetched ? (
+            {!isLoading && recommendedVideos.length === 0 && isDataFetched ? (
                 <>
                     <h3 className="text-2xl font-bold text-gray-800 mb-4">영상을 추천받으세요!</h3>
                     <p className="text-gray-600 mb-6">사용자 라이브러리에 요약본을 추가하면 <br/>요약본의 태그를 분석하여 관심사에 맞는 YouTube 동영상을 추천해 드립니다.</p>
@@ -133,15 +130,20 @@ const RecommendationPage = () => {
             ) : null}
 
             {/* 추천 영상이 로드되지 않았고, 로딩중이 아닌 경우 안내문구 표시 */}
-            {!isLoading && !recommendedVideo && !isDataFetched && (
+            {!isLoading && !isDataFetched && (
                 <div className="py-8">
                     <p className="text-gray-600">추천 영상 정보를 로드하는 중입니다...</p>
                 </div>
             )}
 
-            {/* Recommendation 컴포넌트 사용 */}
-            {!isLoading && recommendedVideo && (
-                <Recommendation recommendation={recommendedVideo} />
+            {/* 추천 영상 목록 표시 */}
+            {!isLoading && recommendedVideos.length > 0 && (
+                <div className="space-y-6">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-6">추천 영상 목록</h3>
+                    {recommendedVideos.map((video) => (
+                        <Recommendation key={video.id} recommendation={video} />
+                    ))}
+                </div>
             )}
         </div>
     );
