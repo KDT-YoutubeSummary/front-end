@@ -295,7 +295,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                         </div>
                         <h3 className="text-2xl font-bold text-gray-800 mb-4">첫 번째 리마인더를 설정해보세요!</h3>
                         <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
-                            라이브러리의 요약본에 리마인더를 설정하여<br />
+                            요약 저장소의 요약본에 리마인더를 설정하여<br />
                             <span className="font-semibold text-blue-600">중요한 내용을 놓치지 않도록</span> 하세요.
                         </p>
 
@@ -305,7 +305,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                                 className="bg-blue-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-blue-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-base"
                             >
                                 <Plus className="h-5 w-5" />
-                                <span>라이브러리로 이동</span>
+                                <span>요약 저장소로 이동</span>
                             </button>
                             <div className="flex items-center space-x-2 text-sm text-gray-500">
                                 <Calendar className="h-4 w-4" />

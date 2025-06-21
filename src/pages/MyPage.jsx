@@ -20,8 +20,14 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
     useEffect(() => {
         const fetchMyPageData = async () => {
             console.log("MyPage: fetchMyPageData 시작");
-            if (!isLoggedIn) {
-                console.log("MyPage: 사용자 로그인되지 않음. 더미 데이터로 설정.");
+            
+            // 더 엄격한 로그인 상태 체크
+            const token = localStorage.getItem('accessToken');
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('username');
+            
+            if (!isLoggedIn || !token || !userId || !userName) {
+                console.log("MyPage: 사용자 로그인되지 않음 또는 불완전한 인증 정보");
                 setUserId('로그인 필요');
                 setUserEmail('로그인 필요');
                 setUserActivityLogs([]);
@@ -32,7 +38,12 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
             setLoading(true);
             try {
                 console.log("MyPage: /api/mypage 호출 시도 중...");
-                const response = await axios.get('http://localhost:8080/api/mypage');
+                const response = await axios.get('http://localhost:8080/api/mypage', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    timeout: 10000 // 10초 타임아웃 추가
+                });
 
                 console.log("MyPage: /api/mypage 응답 받음. 상태:", response.status, response.statusText);
 
@@ -187,6 +198,31 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
         }
     };
 
+
+    // 로그인되지 않은 상태 체크
+    const token = localStorage.getItem('accessToken');
+    const storedUserId = localStorage.getItem('userId');
+    const storedUserName = localStorage.getItem('username');
+    
+    if (!isLoggedIn || !token || !storedUserId || !storedUserName) {
+        return (
+            <div className="flex justify-center items-center h-full w-full">
+                <div className="text-center bg-white rounded-xl shadow-lg p-8 max-w-md mx-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <User className="h-8 w-8 text-red-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">로그인이 필요합니다</h3>
+                    <p className="text-gray-600 mb-6">마이페이지를 이용하려면 먼저 로그인해주세요.</p>
+                    <button 
+                        onClick={() => window.location.href = '/'}
+                        className="w-full bg-red-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                    >
+                        홈으로 이동
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

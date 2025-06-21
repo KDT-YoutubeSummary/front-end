@@ -11,6 +11,10 @@ export const ProfileEditModal = ({ currentId, currentEmail, onClose, onSave }) =
     const [message, setMessage] = useState('');
 
     const handleSubmit = () => {
+        if (!currentPassword.trim()) {
+            setMessage('현재 비밀번호를 입력해주세요.');
+            return;
+        }
         if (newPassword && newPassword !== confirmNewPassword) {
             setMessage('새 비밀번호가 일치하지 않습니다.');
             return;
@@ -32,6 +36,17 @@ export const ProfileEditModal = ({ currentId, currentEmail, onClose, onSave }) =
                 <div className="space-y-4">
                     {message && <p className="text-red-500 text-sm text-center">{message}</p>}
                     <p className="text-gray-700 text-sm">변경사항 적용을 위해 현재 비밀번호를 입력해주세요.</p>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">현재 비밀번호 <span className="text-red-500">*</span></label>
+                        <input
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            required
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700"
+                            placeholder="현재 비밀번호를 입력하세요"
+                        />
+                    </div>
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">새 ID</label> {/* ID 입력 필드 추가 */}
                         <input

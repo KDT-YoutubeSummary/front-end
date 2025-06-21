@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import UserLibrary from '../components/UserLibrary.jsx';
-import { BookOpen, Database, Sparkles, Library, Play } from 'lucide-react';
+import { BookOpen, Database, Sparkles, Archive, Play } from 'lucide-react';
 
 // --- 헬퍼 함수: 유튜브 ID 추출 ---
 const getYoutubeIdFromUrl = (url) => {
@@ -150,7 +150,7 @@ const LibraryPage = () => {
         }
     }, []);
 
-    // --- 라이브러리 목록 조회 (검색 및 필터링) ---
+    // --- 요약 저장소 목록 조회 (검색 및 필터링) ---
     useEffect(() => {
         const fetchLibraryItems = async () => {
             setIsSearching(true);
@@ -185,7 +185,7 @@ const LibraryPage = () => {
                 setLibraryItems(sortedData);
                 fetchTagStats();
             } catch (err) { 
-                console.error('❌ 라이브러리 조회 실패:', err);
+                console.error('❌ 요약 저장소 조회 실패:', err);
                 // 인증 오류 시 로그인 페이지로 리다이렉트
                 if (err.response && (err.response.status === 401 || err.response.status === 403)) {
                     window.location.href = '/login';
@@ -268,7 +268,7 @@ const LibraryPage = () => {
         }
     };
 
-    const handleDeleteLibraryItem = async (itemId) => {
+    const handleDeleteSummaryItem = async (itemId) => {
         if (!window.confirm('정말로 이 요약본을 삭제하시겠습니까?')) return;
         try {
             const headers = {
@@ -347,7 +347,7 @@ const LibraryPage = () => {
                 selectedLibraryItem={selectedLibraryItem}
                 setSelectedLibraryItem={setSelectedItemId} // 목록에서는 ID를, 닫을때는 null을 설정
                 handleSaveUserNotes={handleSaveUserNotes}
-                handleDeleteLibraryItem={handleDeleteLibraryItem}
+                                                handleDeleteLibraryItem={handleDeleteSummaryItem}
                 handleSetReminder={handleSetReminder}
                 librarySearchTerm={librarySearchTerm}
                 setLibrarySearchTerm={setLibrarySearchTerm}

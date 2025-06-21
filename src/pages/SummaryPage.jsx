@@ -27,6 +27,13 @@ export default function SummaryPage() {
             return;
         }
 
+        // YouTube URL 유효성 검사
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)[\w-]+/;
+        if (!youtubeRegex.test(youtubeUrl.trim())) {
+            setError('올바른 YouTube URL을 입력해주세요.\n\n예시:\n• https://www.youtube.com/watch?v=VIDEO_ID\n• https://youtu.be/VIDEO_ID');
+            return;
+        }
+
         const token = localStorage.getItem('accessToken');
         const rawUserId = localStorage.getItem('userId');
         const userId = rawUserId && !isNaN(Number(rawUserId)) ? parseInt(rawUserId, 10) : null;
@@ -65,12 +72,31 @@ export default function SummaryPage() {
 
         } catch (err) {
             console.error('❌ 요약 생성 실패:', err);
-            setError(
-                err.response?.data?.message ||
-                (err.response?.status === 401
-                    ? '인증 실패: 로그인 세션이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.'
-                    : '요약 생성 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-            );
+            
+            // 서버에서 반환된 에러 메시지 처리
+            let errorMessage = '';
+            
+            if (err.response?.data) {
+                // 서버에서 문자열로 에러 메시지를 반환하는 경우
+                if (typeof err.response.data === 'string') {
+                    errorMessage = err.response.data;
+                } else if (err.response.data.message) {
+                    errorMessage = err.response.data.message;
+                }
+            }
+            
+            // 특정 에러 케이스별 사용자 친화적 메시지 제공
+            if (errorMessage.includes('YouTube video transcript not found') || errorMessage.includes('not processed')) {
+                setError('이 YouTube 동영상의 자막을 찾을 수 없습니다. 다음을 확인해주세요:\n\n• 동영상에 자막이 있는지 확인\n• 동영상이 공개 상태인지 확인\n• 올바른 YouTube URL인지 확인\n• 다른 동영상으로 시도해보세요');
+            } else if (err.response?.status === 401) {
+                setError('인증 실패: 로그인 세션이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.');
+            } else if (err.response?.status === 500) {
+                setError(`서버 오류가 발생했습니다: ${errorMessage || '알 수 없는 서버 오류'}\n\n잠시 후 다시 시도해주세요.`);
+            } else if (errorMessage) {
+                setError(errorMessage);
+            } else {
+                setError('요약 생성 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            }
         } finally {
             setIsLoading(false);
             console.log('--- 요약 요청 종료 ---');
@@ -186,7 +212,21 @@ export default function SummaryPage() {
                         />
                     </div>
 
-                    {error && <div className="text-red-500 text-sm mt-4 text-left">{error}</div>}
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+                            <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-red-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="text-sm font-semibold text-red-800">오류가 발생했습니다</h3>
+                                    <div className="text-sm text-red-700 mt-1 whitespace-pre-line">{error}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <button
                         onClick={handleSubmit}

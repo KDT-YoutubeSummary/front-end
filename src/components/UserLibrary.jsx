@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 // react-markdown 라이브러리를 사용합니다.
 import ReactMarkdown from 'react-markdown';
-import { Search, Eye, Calendar, Hash, Edit, Trash2, Bell, Lightbulb, X, Loader2, Library, Plus, BookOpen } from 'lucide-react';
+import { Search, Eye, Calendar, Hash, Edit, Trash2, Bell, Lightbulb, X, Loader2, Archive, Plus, BookOpen } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 /**
  * UserLibrary Component
- * Displays user's video library UI (search, filter, list, detail view).
+ * Displays user's video summary storage UI (search, filter, list, detail view).
  * Data and handlers are passed as props from a parent container (e.g., LibraryPage).
  */
 const UserLibrary = ({
@@ -64,15 +64,23 @@ const UserLibrary = ({
         }
     }, [selectedLibraryItem]);
 
-    // 커스텀 툴크 컴포넌트
-    const CustomTooltip = ({ active, payload, label }) => {
+    // 커스텀 툴크 컴포넌트 (오른쪽 고정)
+    const CustomTooltip = ({ active, payload, label, coordinate }) => {
         if (active && payload && payload.length) {
             const data = payload[0];
             const total = tagChartData.reduce((sum, item) => sum + item.value, 0);
             const percentage = ((data.value / total) * 100).toFixed(1);
             
             return (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs" style={{ zIndex: 9999 }}>
+                <div 
+                    className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs fixed" 
+                    style={{ 
+                        zIndex: 9999,
+                        right: '20px',
+                        top: coordinate ? `${coordinate.y - 50}px` : '50%',
+                        transform: 'translateY(-50%)'
+                    }}
+                >
                     <div className="text-center mb-2">
                         <div className="flex items-center justify-center space-x-2">
                             <div 
@@ -105,32 +113,50 @@ const UserLibrary = ({
         return null;
     };
 
-    // 커스텀 레전드 컴포넌트
+    // 태그 확장/축소 상태
+    const [isTagListExpanded, setIsTagListExpanded] = useState(false);
+
+    // 커스텀 레전드 컴포넌트 (상위 3개만 기본 표시)
     const CustomLegend = ({ payload }) => {
         if (!payload || payload.length === 0) return null;
         
+        const visibleTags = isTagListExpanded ? payload : payload.slice(0, 3);
+        const hasMoreTags = payload.length > 3;
+        
         return (
-            <div className="flex flex-wrap justify-center gap-4 mt-6">
-                {payload.map((entry, index) => (
-                    <div 
-                        key={index}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                        onMouseEnter={() => setHoveredTag(entry.value)}
-                        onMouseLeave={() => setHoveredTag(null)}
-                    >
+            <div className="mt-6">
+                <div className="flex flex-wrap justify-center gap-4">
+                    {visibleTags.map((entry, index) => (
                         <div 
-                            className="w-4 h-4 rounded-full transition-transform duration-200"
-                            style={{ 
-                                backgroundColor: entry.color,
-                                transform: hoveredTag === entry.value ? 'scale(1.2)' : 'scale(1)'
-                            }}
-                        ></div>
-                        <span className="text-sm font-medium text-gray-700">{entry.value}</span>
-                        <span className="text-xs text-gray-500">
-                            ({tagChartData.find(item => item.name === entry.value)?.value || 0}개)
-                        </span>
+                            key={index}
+                            className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                            onMouseEnter={() => setHoveredTag(entry.value)}
+                            onMouseLeave={() => setHoveredTag(null)}
+                        >
+                            <div 
+                                className="w-4 h-4 rounded-full transition-transform duration-200"
+                                style={{ 
+                                    backgroundColor: entry.color,
+                                    transform: hoveredTag === entry.value ? 'scale(1.2)' : 'scale(1)'
+                                }}
+                            ></div>
+                            <span className="text-sm font-medium text-gray-700">{entry.value}</span>
+                            <span className="text-xs text-gray-500">
+                                ({tagChartData.find(item => item.name === entry.value)?.value || 0}개)
+                            </span>
+                        </div>
+                    ))}
+                </div>
+                {hasMoreTags && (
+                    <div className="flex justify-center mt-4">
+                        <button 
+                            onClick={() => setIsTagListExpanded(!isTagListExpanded)}
+                            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                        >
+                            {isTagListExpanded ? '접기' : `더보기 (${payload.length - 3}개 더)`}
+                        </button>
                     </div>
-                ))}
+                )}
             </div>
         );
     };
@@ -258,12 +284,12 @@ const UserLibrary = ({
                         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
                             <div className="text-center py-12">
                                 <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Library className="h-10 w-10 text-yellow-600" />
+                                    <Archive className="h-10 w-10 text-yellow-600" />
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-800 mb-4">첫 번째 요약본을 저장해보세요!</h3>
                                 <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
                                     YouTube 영상을 요약하여<br />
-                                    <span className="font-semibold text-yellow-600">개인 라이브러리</span>에 저장하고 관리하세요.
+                                    <span className="font-semibold text-yellow-600">개인 요약 저장소</span>에 저장하고 관리하세요.
                                 </p>
 
                                 <div className="flex flex-col gap-4 justify-center items-center">
@@ -276,7 +302,7 @@ const UserLibrary = ({
                                     </button>
                                     <div className="flex items-center space-x-2 text-sm text-gray-500">
                                         <BookOpen className="h-4 w-4" />
-                                        <span>개인 라이브러리</span>
+                                        <span>개인 요약 저장소</span>
                                     </div>
                                 </div>
                             </div>
@@ -325,7 +351,7 @@ const UserLibrary = ({
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                 </svg>
                                 <div className="text-left">
-                                    <h3 className="text-2xl font-bold text-gray-800">라이브러리 통계</h3>
+                                    <h3 className="text-2xl font-bold text-gray-800">요약 저장소 통계</h3>
                                     <p className="text-gray-600 text-sm">태그별 요약 영상 분포를 한눈에 확인하세요</p>
                                 </div>
                             </div>

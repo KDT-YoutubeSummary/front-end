@@ -6,7 +6,7 @@ import axios from 'axios';
 
 // CSS 및 아이콘 임포트
 import './App.css';
-import { Home, Library, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings, Menu, X } from 'lucide-react';
+import { Home, Archive, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings, Menu, X } from 'lucide-react';
 
 // 페이지 및 모달 컴포넌트 임포트
 import LibraryPage from './pages/LibraryPage.jsx';
@@ -165,14 +165,23 @@ function AppContent() {
         const token = localStorage.getItem('accessToken');
         const storedUserId = localStorage.getItem('userId');
         const storedUserName = localStorage.getItem('username');
-        if (token) {
+        
+        // 토큰이 있고 유효해 보이는 경우에만 로그인 상태로 설정
+        if (token && storedUserId && storedUserName) {
             setIsLoggedIn(true);
-            setGlobalUserName(localStorage.getItem('username') || 'User');
-            setGlobalUserId(storedUserId || null);
+            setGlobalUserName(storedUserName);
+            setGlobalUserId(storedUserId);
         } else {
+            // 토큰이 없거나 불완전한 경우 로그아웃 상태로 설정
             setIsLoggedIn(false);
             setGlobalUserName('Guest');
             setGlobalUserId(null);
+            // 불완전한 로그인 데이터 정리
+            if (token && (!storedUserId || !storedUserName)) {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('username');
+            }
         }
 
         // 소셜 로그인 성공 메시지 처리
@@ -181,11 +190,21 @@ function AppContent() {
             // 메시지를 표시한 후에는, 페이지를 새로고침해도 메시지가 다시 뜨지 않도록 state를 초기화합니다.
             navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.key, location.state, navigate]); // location.key, location.state, navigate가 변경될 때마다 실행
+
+        // URL에 오류 파라미터가 있는 경우 처리
+        const urlParams = new URLSearchParams(location.search);
+        const error = urlParams.get('error');
+        const errorMessage = urlParams.get('message');
+        if (error === 'oauth_failed') {
+            handleAppShowMessage(`소셜 로그인 실패: ${decodeURIComponent(errorMessage || '알 수 없는 오류')}`);
+            // 오류 파라미터 제거
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location.key, location.state, location.search, navigate]); // location.search 추가
 
     const menuItems = [
         { id: 'summary', label: '영상 요약', path: '/', icon: FileText },
-        { id: 'library', label: '라이브러리', path: '/library', icon: Library },
+                    { id: 'library', label: '요약 저장소', path: '/library', icon: Archive },
         { id: 'reminders', label: '리마인더', path: '/reminders', icon: Bell },
         { id: 'recommendation', label: '추천', path: '/recommendation', icon: Lightbulb },
         { id: 'mypage', label: '마이페이지', path: '/mypage', icon: User },
@@ -246,7 +265,7 @@ function AppContent() {
                             )}
                             {location.pathname === '/library' && (
                                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
-                                    <Library className="h-5 w-5 text-white" />
+                                    <Archive className="h-5 w-5 text-white" />
                                 </div>
                             )}
                             {location.pathname === '/reminders' && (
@@ -283,7 +302,7 @@ function AppContent() {
                                         <span className="text-sm text-gray-600">저장된 영상 요약 관리</span>
                                         <div className="flex items-center space-x-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full mt-1">
                                             <Play className="h-4 w-4" />
-                                            <span>내 라이브러리</span>
+                                            <span>내 요약 저장소</span>
                                         </div>
                                     </div>
                                 )}

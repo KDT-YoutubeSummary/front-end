@@ -164,7 +164,7 @@ const RecommendationPage = () => {
                         </div>
                         <h3 className="text-2xl font-bold text-gray-800 mb-4">맞춤형 영상을 추천받으세요!</h3>
                         <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
-                            사용자 라이브러리에 요약본을 추가하면 AI가 태그를 분석하여<br />
+                            사용자 요약 저장소에 요약본을 추가하면 AI가 태그를 분석하여<br />
                             <span className="font-semibold text-purple-600">관심사에 맞는 YouTube 동영상</span>을 추천해 드립니다.
                         </p>
 
