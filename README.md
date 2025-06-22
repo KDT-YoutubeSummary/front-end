@@ -4,7 +4,6 @@
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
 > **능동적 학습자를 위한 AI 기반 유튜브 영상 요약 및 학습 지원 플랫폼**  
 > YouTube 영상을 AI로 요약하고, 퀴즈를 생성하며, 개인 학습 라이브러리를 관리할 수 있는 웹 애플리케이션의 프론트엔드입니다.
