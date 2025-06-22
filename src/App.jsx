@@ -211,12 +211,21 @@ function AppContent() {
         const storedUserId = localStorage.getItem('userId');
         const storedUserName = localStorage.getItem('username');
         
+        console.log('로그인 상태 확인:', { 
+            hasToken: !!token, 
+            storedUserId, 
+            storedUserName,
+            pathname: location.pathname 
+        });
+
         // 토큰이 있고 유효해 보이는 경우에만 로그인 상태로 설정
         if (token && storedUserId && storedUserName) {
+            console.log('✅ 로그인 상태로 설정');
             setIsLoggedIn(true);
             setGlobalUserName(storedUserName);
             setGlobalUserId(storedUserId);
         } else {
+            console.log('❌ 로그아웃 상태로 설정:', { token: !!token, storedUserId, storedUserName });
             // 토큰이 없거나 불완전한 경우 로그아웃 상태로 설정
             setIsLoggedIn(false);
             setGlobalUserName('Guest');
@@ -231,7 +240,10 @@ function AppContent() {
 
         // 소셜 로그인 성공 메시지 처리
         if (location.state?.loginSuccess) {
-            handleAppShowMessage("로그인이 완료되었습니다!");
+            const message = location.state?.socialLogin 
+                ? "구글 로그인이 완료되었습니다!" 
+                : "로그인이 완료되었습니다!";
+            handleAppShowMessage(message);
             // 메시지를 표시한 후에는, 페이지를 새로고침해도 메시지가 다시 뜨지 않도록 state를 초기화합니다.
             navigate(location.pathname, { replace: true, state: {} });
         }

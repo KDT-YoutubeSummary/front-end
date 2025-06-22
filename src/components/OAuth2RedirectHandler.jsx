@@ -14,7 +14,13 @@ const OAuth2RedirectHandler = () => {
         const userName = searchParams.get('userName');
         const error = searchParams.get('error');
 
-        console.log('OAuth2 리다이렉트 처리:', { accessToken: !!accessToken, userId, userName, error });
+        console.log('OAuth2 리다이렉트 처리:', { 
+            accessToken: accessToken ? `${accessToken.substring(0, 20)}...` : null, 
+            userId, 
+            userName, 
+            error,
+            url: window.location.href
+        });
 
         if (error) {
             // 로그인 실패
@@ -35,22 +41,26 @@ const OAuth2RedirectHandler = () => {
             // 로그인 성공
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('userId', userId);
-            if (userName) localStorage.setItem('userName', userName);
+            if (userName) {
+                localStorage.setItem('userName', userName);
+                localStorage.setItem('username', userName); // App.jsx에서 사용하는 키와 일치
+            }
 
-            setStatus('success');
-            setMessage('로그인에 성공했습니다! 요약 페이지로 이동합니다...');
-
-            console.log('✅ 로그인 성공, 토큰 저장 완료');
+            console.log('✅ 로그인 성공, 토큰 저장 완료:', {
+                storedToken: localStorage.getItem('accessToken') ? 'Stored' : 'Not stored',
+                storedUserId: localStorage.getItem('userId'),
+                storedUserName: localStorage.getItem('userName'),
+                storedUsername: localStorage.getItem('username')
+            });
             
             // 이전에 접근하려던 페이지가 있으면 그곳으로, 없으면 요약 페이지로
             const redirectTo = location.state?.from || '/';
             
-            setTimeout(() => {
-                navigate(redirectTo, { 
-                    state: { loginSuccess: true },
-                    replace: true 
-                });
-            }, 2000);
+            // 바로 페이지로 이동 (대기 화면 없이)
+            navigate(redirectTo, { 
+                state: { loginSuccess: true, socialLogin: true },
+                replace: true 
+            });
         } else {
             // 토큰이나 사용자 정보가 없음
             setStatus('error');
