@@ -4,6 +4,18 @@ import Recommendation from '../components/Recommendation';
 import { recommendationApi } from '../services/api.jsx';
 import { Lightbulb, Plus, TrendingUp, Users, Clock, Search, Hash } from 'lucide-react';
 
+// --- Helper Functions ---
+const getYoutubeIdFromUrl = (url) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([^&\n?#]+)/);
+    return match ? match[1] : null;
+};
+
+const getYoutubeThumbnailUrl = (youtubeId) => {
+    if (!youtubeId) return 'https://placehold.co/320x180/e2e8f0/64748b?text=No+Image'; // Placeholder 이미지
+    return `https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`;
+};
+
 /**
  * Recommendation Page Component
  * Displays video recommendations based on user's library tags.
@@ -18,64 +30,163 @@ const RecommendationPage = () => {
     const [recommendedVideos, setRecommendedVideos] = useState([]); // 복수의 추천 영상을 저장하도록 변경
     const [filteredVideos, setFilteredVideos] = useState([]);
     const [isDataFetched, setIsDataFetched] = useState(false);
+    const [error, setError] = useState(null); // 에러 상태 추가
 
     // --- Search States ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterTag, setFilterTag] = useState('');
 
-    // 사용자 ID를 localStorage에서 가져옴
-    const userId = localStorage.getItem('userId');
+    // 사용자 ID를 localStorage에서 가져옴 - 더 안전하게 처리
+    const getUserId = () => {
+        const userId = localStorage.getItem('userId');
+        const token = localStorage.getItem('accessToken');
+        const username = localStorage.getItem('username');
+        
+        console.log('🔍 사용자 인증 정보 확인:', {
+            userId: userId,
+            hasToken: !!token,
+            username: username,
+            userIdType: typeof userId
+        });
+        
+        // 인증 정보가 모두 있는지 확인
+        if (!userId || !token || !username) {
+            console.warn('⚠️ 불완전한 사용자 인증 정보:', { userId, hasToken: !!token, username });
+            return null;
+        }
+        
+        return userId;
+    };
+
+    const userId = getUserId();
 
     // 요약 페이지로 이동하는 함수
     const handleNavigateToSummary = () => {
         navigate('/');
     };
 
-    // 페이지가 로드될 때 추천 영상 정보를 자동으로 가져오는 함수
-    const fetchRecommendations = async () => {
-        if (!userId) return;
-
-        setIsLoading(true);
-
+    // 백엔드 서버 상태 확인 함수
+    const checkBackendStatus = async () => {
         try {
-            // API 호출 시도
-            const recommendations = await recommendationApi.getUserRecommendations(userId);
-            console.log('추천 영상 데이터:', recommendations); // 콘솔에 추천 영상 데이터 출력
-
-            if (recommendations && recommendations.length > 0) {
-                // 최신순으로 정렬 (생성 시간 기준)
-                const sortedRecommendations = recommendations.sort((a, b) => 
-                    new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id)
-                );
-
-                // 모든 추천 영상을 처리하여 배열에 저장
-                const formattedRecommendations = sortedRecommendations.map(recommendation => ({
-                    id: recommendation.id, // 추천 영상 ID 추가
-                    title: recommendation.recommendedVideo?.title || '제목 없음',
-                    reason: recommendation.recommendationReason || '추천 이유가 제공되지 않았습니다.',
-                    youtubeUrl: recommendation.recommendedVideo?.originalUrl || '',
-                    // 추가 정보 (표시가 필요한 경우 Recommendation 컴포넌트도 수정 필요)
-                    uploaderName: recommendation.recommendedVideo?.uploaderName || '',
-                    thumbnailUrl: recommendation.recommendedVideo?.thumbnailUrl || '',
-                    viewCount: recommendation.recommendedVideo?.viewCount || 0
-                }));
-
-                console.log('변환된 추천 영상 목록:', formattedRecommendations); // 변환된 데이터 확인
-                setRecommendedVideos(formattedRecommendations);
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/actuator/health`, {
+                method: 'GET',
+                timeout: 5000
+            });
+            
+            if (response.ok) {
+                console.log('✅ 백엔드 서버가 정상적으로 실행 중입니다.');
+                return true;
             } else {
-                // 추천 영상이 없는 경우 빈 배열로 설정
-                setRecommendedVideos([]);
-                console.log('추천 영상이 없습니다.');
+                console.warn('⚠️ 백엔드 서버 응답이 정상적이지 않습니다.');
+                return false;
             }
         } catch (error) {
-            console.error('추천 영상 조회 실패:', error);
+            console.error('❌ 백엔드 서버에 연결할 수 없습니다:', error);
+            return false;
+        }
+    };
+
+    // 페이지가 로드될 때 추천 영상 정보를 자동으로 가져오는 함수
+    const fetchRecommendations = async () => {
+        if (!userId) {
+            console.warn('⚠️ 사용자 ID가 없어서 추천 데이터를 조회할 수 없습니다.');
+            setError('사용자 인증 정보가 없습니다. 다시 로그인해주세요.');
+            setIsDataFetched(true);
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            console.log('🔍 추천 데이터 조회 시작 - userId:', userId);
+            
+            // API 호출 (SummaryArchivePage와 동일한 방식)
+            const response = await recommendationApi.getUserRecommendations(userId);
+            console.log('📋 추천 영상 목록 응답:', response);
+            
+            // SummaryArchivePage와 동일한 방식으로 데이터 처리
+            const recommendations = response.data || response || [];
+            
+            if (recommendations && recommendations.length > 0) {
+                const formattedRecommendations = recommendations.map((rec, index) => {
+                    console.log(`🔍 추천 항목 ${index + 1}:`, rec);
+                    console.log(`🔍 추천 항목 구조 분석:`, Object.keys(rec));
+                    
+                    // 백엔드 Entity에서 관련 영상 정보 추출
+                    // VideoRecommendation Entity는 recommendedVideo (추천된 영상)과 sourceVideo (소스 영상)을 가짐
+                    const recommendedVideo = rec.recommendedVideo || rec.recommended_video || {};
+                    const sourceVideo = rec.sourceVideo || rec.source_video || {};
+                    
+                    console.log(`🔍 추천된 영상 (recommendedVideo):`, recommendedVideo);
+                    console.log(`🔍 소스 영상 (sourceVideo):`, sourceVideo);
+                    
+                    // 추천된 영상의 정보를 우선적으로 사용 (없으면 소스 영상 정보 사용)
+                    const targetVideo = Object.keys(recommendedVideo).length > 0 ? recommendedVideo : sourceVideo;
+                    console.log(`🔍 사용할 영상 정보:`, targetVideo);
+                    
+                    // Video Entity에서 영상 정보 추출
+                    const videoTitle = targetVideo.title || targetVideo.videoTitle || rec.title || '제목 없음';
+                    const originalUrl = targetVideo.originalUrl || targetVideo.original_url || rec.url || '';
+                    const uploaderName = targetVideo.uploaderName || targetVideo.uploader_name || '';
+                    const viewCount = targetVideo.viewCount || targetVideo.view_count || 0;
+                    const thumbnailUrl = targetVideo.thumbnailUrl || targetVideo.thumbnail_url || '';
+                    
+                    // 썸네일이 없으면 YouTube ID로 생성
+                    const finalThumbnailUrl = thumbnailUrl || getYoutubeThumbnailUrl(getYoutubeIdFromUrl(originalUrl));
+
+                    const formattedItem = {
+                        id: rec.recommendationId || rec.id || index,
+                        title: videoTitle,
+                        reason: rec.recommendationReason || rec.reason || '추천 이유가 제공되지 않았습니다.',
+                        youtubeUrl: originalUrl,
+                        thumbnailUrl: finalThumbnailUrl,
+                        uploaderName: uploaderName,
+                        viewCount: viewCount,
+                        createdAt: rec.createdAt || rec.recommendedAt || null,
+                    };
+                    
+                    console.log(`🔍 변환된 추천 항목:`, formattedItem);
+                    return formattedItem;
+                });
+
+                console.log('✅ 변환된 추천 영상 목록:', formattedRecommendations);
+                setRecommendedVideos(formattedRecommendations);
+                setError(null);
+            } else {
+                console.log('📝 추천 영상이 없습니다.');
+                setRecommendedVideos([]);
+                setError(null);
+            }
+        } catch (error) {
+            console.error('❌ 추천 영상 조회 실패:', error);
+            console.error('❌ 에러 상세:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                message: error.message
+            });
 
             // 403 오류 발생 시 (권한 문제)
             if (error.response && error.response.status === 403) {
-                console.log('권한 오류가 발생했습니다.');
+                console.log('⚠️ 권한 오류가 발생했습니다.');
+                setError('접근 권한이 없습니다. 다시 로그인해주세요.');
+                setRecommendedVideos([]);
+            } else if (error.response && error.response.status === 401) {
+                console.log('⚠️ 인증 오류가 발생했습니다.');
+                setError('인증이 만료되었습니다. 다시 로그인해주세요.');
+                setRecommendedVideos([]);
+            } else if (error.response && error.response.status === 404) {
+                console.log('⚠️ 사용자 추천 데이터를 찾을 수 없습니다.');
+                setError('사용자 추천 데이터를 찾을 수 없습니다.');
+                setRecommendedVideos([]);
+            } else if (error.isNetworkError || error.code === 'ERR_NETWORK' || error.name === 'TypeError') {
+                console.log('⚠️ 네트워크 오류가 발생했습니다.');
+                setError('백엔드 서버에 연결할 수 없습니다.\n\n• 백엔드 서버가 실행 중인지 확인해주세요 (포트 8080)\n• 네트워크 연결 상태를 확인해주세요');
                 setRecommendedVideos([]);
             } else {
                 // 다른 오류의 경우 메시지 표시
+                setError(`추천 데이터 조회 중 오류가 발생했습니다:\n${error.message}`);
                 setRecommendedVideos([]);
             }
         } finally {
@@ -110,10 +221,22 @@ const RecommendationPage = () => {
     // 컴포넌트가 화면에 보일 때만 API 호출하도록 수정
     useEffect(() => {
         if (isVisible && userId && !isDataFetched) {
-            console.log('컴포넌트가 화면에 표시됨, API 호출 시작');
+            console.log('🔍 컴포넌트가 화면에 표시됨, API 호출 시작');
             fetchRecommendations();
         }
     }, [isVisible, userId, isDataFetched]);
+    
+    // 컴포넌트가 마운트될 때도 데이터를 가져오도록 추가
+    useEffect(() => {
+        if (userId) {
+            console.log('🔍 컴포넌트 마운트됨, 추천 데이터 조회 시작');
+            fetchRecommendations();
+        } else {
+            console.warn('⚠️ 사용자 ID가 없어서 추천 데이터를 조회하지 않습니다.');
+            setError('사용자 인증 정보가 없습니다. 다시 로그인해주세요.');
+            setIsDataFetched(true);
+        }
+    }, [userId]);
 
     // 검색 및 필터링 함수
     const filterVideos = useCallback(() => {
@@ -155,8 +278,40 @@ const RecommendationPage = () => {
                 </div>
             )}
 
+            {/* 에러 발생 시 표시 */}
+            {!isLoading && error && (
+                <div className="bg-white rounded-xl shadow-lg border border-red-200 p-8">
+                    <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <TrendingUp className="h-8 w-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">데이터 조회 오류</h3>
+                        <p className="text-red-600 mb-6 whitespace-pre-line">{error}</p>
+                        <div className="flex flex-col gap-4 justify-center items-center">
+                            <button
+                                onClick={() => {
+                                    setError(null);
+                                    setIsDataFetched(false);
+                                    fetchRecommendations();
+                                }}
+                                className="bg-red-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-red-600 transition-colors transform hover:scale-105 shadow-md text-base"
+                            >
+                                다시 시도
+                            </button>
+                            <button
+                                onClick={handleNavigateToSummary}
+                                className="bg-purple-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-purple-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-base"
+                            >
+                                <Plus className="h-5 w-5" />
+                                <span>영상 요약 등록</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
-            {!isLoading && recommendedVideos.length === 0 && isDataFetched ? (
+            {!isLoading && !error && recommendedVideos.length === 0 && isDataFetched ? (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
                     <div className="text-center py-12">
                         <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -185,8 +340,8 @@ const RecommendationPage = () => {
                 </div>
             ) : null}
 
-            {/* 추천 영상이 로드되지 않았고, 로딩중이 아닌 경우 안내문구 표시 */}
-            {!isLoading && !isDataFetched && (
+            {/* 데이터가 로드되지 않았고, 로딩중이 아니고, 에러가 없는 경우 안내문구 표시 */}
+            {!isLoading && !error && !isDataFetched && (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
                     <div className="text-center py-8">
                         <p className="text-gray-600 text-base">추천 영상 정보를 로드하는 중입니다...</p>
@@ -195,7 +350,7 @@ const RecommendationPage = () => {
             )}
 
             {/* 추천 영상 목록 표시 */}
-            {!isLoading && recommendedVideos.length > 0 && (
+            {!isLoading && !error && recommendedVideos.length > 0 && (
                 <div className="space-y-6">
                     {/* Search and Filter Inputs */}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex gap-4">

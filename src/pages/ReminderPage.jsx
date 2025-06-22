@@ -163,8 +163,8 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                     };
                     
                     try {
-                        // userLibraryId를 사용해서 라이브러리 정보 조회
-                        const libraryResponse = await fetch(`http://localhost:8080/api/libraries/${reminder.userLibraryId}`, {
+                        // summaryArchiveId를 사용해서 요약 저장소 정보 조회
+                        const libraryResponse = await fetch(`http://localhost:8080/api/summary-archives/${reminder.summaryArchiveId}`, {
                             headers: {
                                 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                             }
@@ -201,7 +201,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                             }
                         }
                     } catch (error) {
-                        console.error(`라이브러리 정보 조회 실패 (ID: ${reminder.userLibraryId}):`, error);
+                        console.error(`요약 저장소 정보 조회 실패 (ID: ${reminder.summaryArchiveId}):`, error);
                     }
 
                     return {

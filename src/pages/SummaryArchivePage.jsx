@@ -1,6 +1,8 @@
+// src/pages/SummaryArchivePage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import UserLibrary from '../components/UserLibrary.jsx';
+import { summaryArchiveApi, reminderApi, recommendationApi } from '../services/api.jsx';
+import SummaryArchive from '../components/SummaryArchive.jsx';
 import { BookOpen, Database, Sparkles, Archive, Play } from 'lucide-react';
 
 // --- 헬퍼 함수: 유튜브 ID 추출 ---
@@ -110,12 +112,12 @@ const ReminderModal = ({ isOpen, onClose, onSave, itemTitle, onShowError }) => {
     );
 };
 
-// --- LibraryPage 주 컴포넌트 ---
-const LibraryPage = () => {
+// --- SummaryArchivePage 주 컴포넌트 ---
+const SummaryArchivePage = () => {
     // --- 상태(State) 선언 ---
-    const [libraryItems, setLibraryItems] = useState([]);
-    const [librarySearchTerm, setLibrarySearchTerm] = useState('');
-    const [libraryFilterTag, setLibraryFilterTag] = useState('');
+    const [summaryArchives, setSummaryArchives] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterTag, setFilterTag] = useState('');
     const [isSearching, setIsSearching] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState(null); // ID만 저장
 
@@ -135,12 +137,8 @@ const LibraryPage = () => {
     // --- 통계 데이터 조회 함수 ---
     const fetchTagStats = useCallback(async () => {
         try {
-            const headers = {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            };
-            const res = await axios.get('http://localhost:8080/api/libraries/stat/tags', { headers });
-            setTagStatsData(res.data.data.map(item => ({ name: item.tag, value: item.count })));
+            const res = await summaryArchiveApi.getTagStatistics();
+            setTagStatsData(res.data.map(item => ({ name: item.tag, value: item.count })));
         } catch (err) { 
             console.error('❌ 태그 통계 조회 실패:', err);
             // 인증 오류 시 로그인 페이지로 리다이렉트
@@ -152,37 +150,33 @@ const LibraryPage = () => {
 
     // --- 요약 저장소 목록 조회 (검색 및 필터링) ---
     useEffect(() => {
-        const fetchLibraryItems = async () => {
+        const fetchArchives = async () => {
             setIsSearching(true);
             try {
-                let url = 'http://localhost:8080/api/libraries';
-                const params = new URLSearchParams();
-                if (librarySearchTerm) params.append('title', librarySearchTerm);
-                if (libraryFilterTag) params.append('tags', libraryFilterTag);
-                if (params.toString()) url = `http://localhost:8080/api/libraries/search?${params.toString()}`;
+                let res;
+                if (searchTerm || filterTag) {
+                    // 검색 API 사용
+                    res = await summaryArchiveApi.searchArchives(searchTerm, filterTag);
+                } else {
+                    // 전체 조회 API 사용
+                    res = await summaryArchiveApi.getArchives();
+                }
 
-                // 인증 헤더를 명시적으로 포함
-                const headers = {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                    'Content-Type': 'application/json'
-                };
-
-                const res = await axios.get(url, { headers });
-                const sortedData = res.data.data
-                    .sort((a, b) => new Date(b.saved_at) - new Date(a.saved_at)) // 최신순 정렬
+                console.log('📋 요약 저장소 목록 응답:', res);
+                
+                const sortedData = (res.data || [])
+                    .sort((a, b) => new Date(b.last_viewed_at || b.lastViewedAt || b.saved_at || b.savedAt) - new Date(a.last_viewed_at || a.lastViewedAt || a.saved_at || a.savedAt))
                     .map(item => ({
-                        id: item.library_id,
-                        title: item.video_title,
-                        hashtags: item.tags,
-                        date: new Date(item.saved_at).toLocaleDateString('ko-KR'),
-                        userNotes: item.user_notes,
-                        thumbnail: getYoutubeThumbnailUrl(getYoutubeIdFromUrl(item.original_url)),
-                        uploader: '정보 없음',
-                        views: '정보 없음',
+                        id: item.archive_id || item.summaryArchiveId, // DTO의 @JsonProperty("archive_id")
+                        title: item.video_title || item.videoTitle || '제목 없음',
+                        hashtags: item.tags || [],
+                        date: new Date(item.last_viewed_at || item.lastViewedAt).toLocaleDateString('ko-KR'),
+                        userNotes: item.user_notes || item.userNotes || '',
+                        thumbnail: getYoutubeThumbnailUrl(getYoutubeIdFromUrl(item.original_url || item.originalUrl)),
                         summary: '상세 정보를 보려면 클릭하세요.',
-                        original_url: item.original_url,
+                        original_url: item.original_url || item.originalUrl,
                     }));
-                setLibraryItems(sortedData);
+                setSummaryArchives(sortedData);
                 fetchTagStats();
             } catch (err) { 
                 console.error('❌ 요약 저장소 조회 실패:', err);
@@ -193,9 +187,9 @@ const LibraryPage = () => {
             }
             finally { setIsSearching(false); }
         };
-        const handler = setTimeout(fetchLibraryItems, 300);
+        const handler = setTimeout(fetchArchives, 300);
         return () => clearTimeout(handler);
-    }, [librarySearchTerm, libraryFilterTag, fetchTagStats]);
+    }, [searchTerm, filterTag, fetchTagStats]);
 
     // --- 통계 데이터를 차트용 데이터로 가공 ---
     useEffect(() => {
@@ -228,71 +222,86 @@ const LibraryPage = () => {
     }, [tagStatsData]);
 
     // --- 선택된 ID를 기반으로 실제 아이템 객체를 찾는 파생 상태 ---
-    const selectedLibraryItem = useMemo(() => {
+    const selectedArchive = useMemo(() => {
         if (!selectedItemId) return null;
-        return libraryItems.find(item => item.id === selectedItemId) || null;
-    }, [selectedItemId, libraryItems]);
+        const item = summaryArchives.find(item => item.id === selectedItemId) || null;
+        if (item) {
+            console.log("Found selected item:", item);
+        } else {
+            console.warn(`Item with id ${selectedItemId} not found in summaryArchives.`);
+        }
+        return item;
+    }, [selectedItemId, summaryArchives]);
 
     // --- 상세 정보 조회 로직 (무한 루프 방지) ---
     useEffect(() => {
         const fetchDetailIfNeeded = async () => {
-            if (selectedItemId && selectedLibraryItem && selectedLibraryItem.summary === '상세 정보를 보려면 클릭하세요.') {
+            if (selectedItemId && selectedArchive && selectedArchive.summary === '상세 정보를 보려면 클릭하세요.') {
+                console.log(`🔍 상세 조회 시작 - ID: ${selectedItemId}`);
                 try {
-                    const headers = {
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                        'Content-Type': 'application/json'
-                    };
-                    const res = await axios.get(`http://localhost:8080/api/libraries/${selectedItemId}`, { headers });
-                    const detailedData = res.data.data;
-                    setLibraryItems(prevItems =>
+                    const res = await summaryArchiveApi.getArchiveDetail(selectedItemId);
+                    console.log('📋 상세 조회 응답:', res);
+                    
+                    const detailedData = res.data;
+                    console.log('📄 상세 데이터:', detailedData);
+                    
+                    setSummaryArchives(prevItems =>
                         prevItems.map(item =>
                             item.id === selectedItemId
                                 ? { ...item,
-                                    summary: detailedData.summary_text,
-                                    uploader: detailedData.uploader_name,
-                                    views: detailedData.view_count,
+                                    summary: detailedData.summary_text || '요약 정보가 없습니다.',
+                                    uploader: detailedData.uploader_name || '정보 없음',
+                                    views: detailedData.view_count ? detailedData.view_count.toLocaleString() : '정보 없음',
+                                    userNotes: detailedData.user_notes || item.userNotes || '',
                                 }
                                 : item
                         )
                     );
+                    console.log('✅ 상세 조회 완료');
                 } catch (err) {
                     console.error(`❌ 상세 조회 실패 (ID: ${selectedItemId}):`, err);
-                    setMessageModalContent('상세 정보 로딩에 실패했습니다.');
+                    console.error('에러 상세:', err.response?.data || err.message);
+                    
+                    let errorMessage = '상세 정보 로딩에 실패했습니다.';
+                    if (err.response?.status === 404) {
+                        errorMessage = '요청한 요약 저장소를 찾을 수 없습니다.';
+                    } else if (err.response?.status === 403) {
+                        errorMessage = '해당 요약 저장소에 접근할 권한이 없습니다.';
+                    } else if (err.response?.status === 401) {
+                        errorMessage = '로그인이 필요합니다.';
+                        // 로그인 페이지로 리다이렉트
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    setMessageModalContent(errorMessage);
                     setShowMessageModal(true);
                     setSelectedItemId(null);
                 }
             }
         };
         fetchDetailIfNeeded();
-    }, [selectedItemId, selectedLibraryItem]);
+    }, [selectedItemId, selectedArchive]);
 
     const handleSaveUserNotes = async (itemId, notes) => {
         try {
-            const headers = {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            };
-            await axios.patch('http://localhost:8080/api/libraries/notes', { user_library_id: itemId, user_notes: notes }, { headers });
+            await summaryArchiveApi.updateUserNote(itemId, notes);
             setMessageModalContent('메모가 성공적으로 저장되었습니다!');
             setShowMessageModal(true);
-            setLibraryItems(prev => prev.map(item => item.id === itemId ? { ...item, userNotes: notes } : item));
+            setSummaryArchives(prev => prev.map(item => item.id === itemId ? { ...item, userNotes: notes } : item));
         } catch (err) {
             setMessageModalContent('메모 저장에 실패했습니다.');
             setShowMessageModal(true);
         }
     };
 
-    const handleDeleteSummaryItem = async (itemId) => {
+    const handleDeleteArchive = async (itemId) => {
         if (!window.confirm('정말로 이 요약본을 삭제하시겠습니까?')) return;
         try {
-            const headers = {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            };
-            await axios.delete(`http://localhost:8080/api/libraries/${itemId}`, { headers });
+            await summaryArchiveApi.deleteArchive(itemId);
             setMessageModalContent('요약본이 성공적으로 삭제되었습니다!');
             setShowMessageModal(true);
-            setLibraryItems(prev => prev.filter(item => item.id !== itemId));
+            setSummaryArchives(prev => prev.filter(item => item.id !== itemId));
             setSelectedItemId(null); // 삭제 후 상세 보기 창 닫기
             fetchTagStats(); // 삭제 후 통계 다시 불러오기
         } catch (err) {
@@ -322,30 +331,65 @@ const LibraryPage = () => {
         }
 
         const payload = {
-            userId: userId, userLibraryId: reminderItem.id, reminderType: reminderSettings.reminderType,
+            userId: userId, 
+            summaryArchiveId: reminderItem.id, // `reminderItem` 객체의 `id`를 사용합니다.
+            reminderType: reminderSettings.reminderType,
+            reminderMessage: `리마인더: ${reminderItem.title}`,
+            reminderTime: `${reminderSettings.date}T${reminderSettings.time}:00`,
             baseDatetimeForRecurrence: `${reminderSettings.date}T${reminderSettings.time}:00`,
-            reminderNote: reminderSettings.note, frequencyInterval: reminderSettings.frequencyInterval,
-            dayOfWeek: reminderSettings.dayOfWeek, dayOfMonth: reminderSettings.dayOfMonth, isActive: true,
+            reminderNote: reminderSettings.note, 
+            frequencyInterval: reminderSettings.frequencyInterval,
+            dayOfWeek: reminderSettings.dayOfWeek, 
+            dayOfMonth: reminderSettings.dayOfMonth, 
+            isActive: true,
         };
 
         try {
-            const headers = {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            };
-            await axios.post('http://localhost:8080/api/reminders', payload, { headers });
+            // api.jsx에 정의된 함수를 사용하여 일관성 유지
+            await reminderApi.createReminder(payload);
 
             let recommendationMessage = "\n\n하지만 추천 영상 생성에는 실패했습니다.";
             try {
-                await axios.post(`http://localhost:8080/api/recommendations/ai/${reminderItem.id}`, {}, { headers });
+                console.log('🚀 추천 영상 생성 시작 - reminderItem.id:', reminderItem.id);
+                
+                // api.jsx에 정의된 함수를 사용하여 일관성 유지
+                await recommendationApi.generateAiRecommendation(reminderItem.id);
                 recommendationMessage = "\n\n또한, 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
+                console.log('✅ 추천 영상 생성 성공');
             } catch (recError) { 
-                console.error("❌ 추천 영상 생성 API 호출 실패:", recError); 
+                console.error("❌ 추천 영상 생성 API 호출 실패:", recError);
+                console.error("❌ 에러 상세 정보:", {
+                    message: recError.message,
+                    status: recError.response?.status,
+                    statusText: recError.response?.statusText,
+                    code: recError.code,
+                    isAuthError: recError.isAuthError
+                });
+                
+                // 에러 타입별 상세 처리
+                if (recError.isAuthError) {
+                    recommendationMessage = "\n\n추천 영상 생성을 위해서는 다시 로그인이 필요합니다.";
+                } else if (recError.isNetworkError) {
+                    recommendationMessage = "\n\n네트워크 오류로 추천 영상 생성에 실패했습니다.";
+                } else if (recError.response?.status === 401) {
+                    recommendationMessage = "\n\n인증이 만료되어 추천 영상 생성에 실패했습니다.";
+                } else if (recError.response?.status === 403) {
+                    recommendationMessage = "\n\n권한이 없어 추천 영상 생성에 실패했습니다.";
+                } else if (recError.response?.status === 500) {
+                    recommendationMessage = "\n\n서버 내부 오류로 추천 영상 생성에 실패했습니다.\n백엔드 서버 로그를 확인해주세요.";
+                } else if (recError.code === 'ERR_NETWORK') {
+                    recommendationMessage = "\n\n네트워크 오류로 추천 영상 생성에 실패했습니다.";
+                } else if (recError.message && recError.message.includes('서버 내부 오류')) {
+                    recommendationMessage = "\n\n서버 내부 오류로 추천 영상 생성에 실패했습니다.\nAI 서비스에 일시적인 문제가 있을 수 있습니다.";
+                } else {
+                    recommendationMessage = "\n\n추천 영상 생성 중 오류가 발생했습니다.\n나중에 다시 시도해주세요.";
+                }
             }
 
             setMessageModalContent(`리마인더가 성공적으로 설정되었습니다!${recommendationMessage}`);
         } catch (err) {
-            setMessageModalContent(`오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+            const errorMessage = err.response?.data?.message || err.message || '알 수 없는 오류';
+            setMessageModalContent(`오류가 발생했습니다: ${errorMessage}`);
         } finally {
             // 로딩 종료 및 상태 초기화
             setIsGenerating(false);
@@ -356,17 +400,17 @@ const LibraryPage = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-8">
-            <UserLibrary
-                libraryItems={libraryItems}
-                selectedLibraryItem={selectedLibraryItem}
-                setSelectedLibraryItem={setSelectedItemId} // 목록에서는 ID를, 닫을때는 null을 설정
+            <SummaryArchive
+                summaryArchives={summaryArchives}
+                selectedArchive={selectedArchive}
+                setSelectedArchive={setSelectedItemId} // 목록에서는 ID를, 닫을때는 null을 설정
                 handleSaveUserNotes={handleSaveUserNotes}
-                                                handleDeleteLibraryItem={handleDeleteSummaryItem}
+                handleDeleteArchive={handleDeleteArchive}
                 handleSetReminder={handleSetReminder}
-                librarySearchTerm={librarySearchTerm}
-                setLibrarySearchTerm={setLibrarySearchTerm}
-                libraryFilterTag={libraryFilterTag}
-                setLibraryFilterTag={setLibraryFilterTag}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                filterTag={filterTag}
+                setFilterTag={setFilterTag}
                 isSearching={isSearching}
                 tagChartData={tagChartData}
                 showTagStats={showTagStats}
@@ -393,6 +437,4 @@ const LibraryPage = () => {
     );
 };
 
-// 명시적으로 LibraryPage를 default export
-const LibraryPageComponent = LibraryPage;
-export default LibraryPageComponent;
+export default SummaryArchivePage;

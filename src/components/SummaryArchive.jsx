@@ -1,5 +1,3 @@
-// src/components/UserLibrary.jsx
-
 import React, { useState, useEffect } from 'react';
 // react-markdown 라이브러리를 사용합니다.
 import ReactMarkdown from 'react-markdown';
@@ -7,21 +5,21 @@ import { Search, Eye, Calendar, Hash, Edit, Trash2, Bell, Lightbulb, X, Loader2,
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 /**
- * UserLibrary Component
+ * SummaryArchive Component
  * Displays user's video summary storage UI (search, filter, list, detail view).
- * Data and handlers are passed as props from a parent container (e.g., LibraryPage).
+ * Data and handlers are passed as props from a parent container (e.g., SummaryArchivePage).
  */
-const UserLibrary = ({
-                         libraryItems,
-                         selectedLibraryItem,
-                         setSelectedLibraryItem,
+const SummaryArchive = ({
+                         summaryArchives,
+                         selectedArchive,
+                         setSelectedArchive,
                          handleSaveUserNotes,
-                         handleDeleteLibraryItem,
+                         handleDeleteArchive,
                          handleSetReminder,
-                         librarySearchTerm,
-                         setLibrarySearchTerm,
-                         libraryFilterTag,
-                         setLibraryFilterTag,
+                         searchTerm,
+                         setSearchTerm,
+                         filterTag,
+                         setFilterTag,
                          tagChartData,
                          showTagStats,
                          setShowTagStats,
@@ -57,12 +55,12 @@ const UserLibrary = ({
     ];
 
     useEffect(() => {
-        if (selectedLibraryItem && typeof selectedLibraryItem === 'object') {
-            setUserNotes(selectedLibraryItem.userNotes || '');
+        if (selectedArchive && typeof selectedArchive === 'object') {
+            setUserNotes(selectedArchive.userNotes || '');
         } else {
             setUserNotes('');
         }
-    }, [selectedLibraryItem]);
+    }, [selectedArchive]);
 
     // 태그 정보 카드 컴포넌트 (파이차트 오른쪽에 고정)
     const TagInfoCard = () => {
@@ -147,7 +145,7 @@ const UserLibrary = ({
                 <div className="flex flex-wrap justify-center gap-4">
                     {visibleTags.map((entry, index) => (
                         <div 
-                            key={index}
+                            key={`legend-${entry.value}-${index}`}
                             className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                             onMouseEnter={() => setHoveredTag(entry.value)}
                             onMouseLeave={() => setHoveredTag(null)}
@@ -182,52 +180,68 @@ const UserLibrary = ({
 
     return (
         <div className="space-y-8">
-            {selectedLibraryItem ? (
-                // Detailed Library Item View
+            {selectedArchive ? (
+                // Detailed Archive Item View
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fade-in-up">
                     <div className="p-6 border-b border-gray-200 flex justify-between items-start">
                         <div className="flex space-x-4 items-start flex-1 min-w-0">
                             <img
-                                src={selectedLibraryItem.thumbnail || 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image'}
+                                src={selectedArchive.thumbnail || 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image'}
                                 alt="썸네일"
                                 className="w-32 h-20 object-cover rounded-lg shadow-md flex-shrink-0"
                                 onError={(e) => e.target.src = 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image'}
                             />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between mb-2">
-                                    <h3 className="text-xl font-semibold text-gray-800 break-words text-left flex-1 mr-3">{selectedLibraryItem.title}</h3>
+                                    <h3 className="text-xl font-semibold text-gray-800 break-words text-left flex-1 mr-3">{selectedArchive.title}</h3>
                                     <div className="flex items-center space-x-2 flex-shrink-0">
                                         <button
-                                            onClick={() => handleDeleteLibraryItem(selectedLibraryItem.id)}
+                                            onClick={() => {
+                                                console.log('🔍 삭제 클릭 - selectedArchive:', selectedArchive);
+                                                if (selectedArchive && selectedArchive.id) {
+                                                    handleDeleteArchive(selectedArchive.id);
+                                                } else {
+                                                    console.error('❌ selectedArchive 또는 ID가 없습니다:', selectedArchive);
+                                                    alert('삭제 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+                                                }
+                                            }}
                                             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                             title="삭제"
                                         >
                                             <Trash2 className="h-5 w-5" />
                                         </button>
                                         <button
-                                            onClick={() => handleSetReminder(selectedLibraryItem)}
+                                            onClick={() => {
+                                                console.log('🔍 리마인더 설정 클릭 - selectedArchive:', selectedArchive);
+                                                if (selectedArchive && selectedArchive.id) {
+                                                    handleSetReminder(selectedArchive);
+                                                } else {
+                                                    console.error('❌ selectedArchive 또는 ID가 없습니다:', selectedArchive);
+                                                    alert('리마인더 설정 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+                                                }
+                                            }}
                                             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                             title="리마인더 설정"
                                         >
                                             <Bell className="h-5 w-5" />
                                         </button>
                                         <button
-                                            onClick={() => setSelectedLibraryItem(null)}
+                                            onClick={() => setSelectedArchive(null)}
                                             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                         >
                                             <X className="h-5 w-5" />
                                         </button>
                                     </div>
                                 </div>
-                                <p className="text-gray-600 text-sm mb-2 truncate text-left">{selectedLibraryItem.uploader}</p>
+                                <p className="text-gray-600 text-sm mb-2 truncate text-left">{selectedArchive.uploader}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                     <div className="flex items-center space-x-1">
                                         <Eye className="h-4 w-4"/>
-                                        <span>{selectedLibraryItem.views} 조회수</span>
+                                        <span>{selectedArchive.views} 조회수</span>
                                     </div>
                                     <div className="flex items-center space-x-1">
                                         <Calendar className="h-4 w-4"/>
-                                        <span>{selectedLibraryItem.date}</span>
+                                        <span>{selectedArchive.date}</span>
                                     </div>
                                 </div>
                             </div>
@@ -239,7 +253,7 @@ const UserLibrary = ({
                         <div className="text-left">
                             <h4 className="text-base font-semibold text-gray-800 mb-2">요약 내용</h4>
                             <div className="bg-gray-50 rounded-lg p-4 text-base text-gray-700 leading-relaxed">
-                                <ReactMarkdown>{selectedLibraryItem.summary}</ReactMarkdown>
+                                <ReactMarkdown>{selectedArchive.summary}</ReactMarkdown>
                             </div>
                         </div>
 
@@ -255,7 +269,18 @@ const UserLibrary = ({
                             />
                             <div className="mt-3">
                                 <button
-                                    onClick={() => handleSaveUserNotes(selectedLibraryItem.id, userNotes)}
+                                    onClick={() => {
+                                        console.log('🔍 메모 저장 클릭 - selectedArchive:', selectedArchive);
+                                        console.log('🔍 selectedArchive.id:', selectedArchive?.id);
+                                        console.log('🔍 userNotes:', userNotes);
+                                        
+                                        if (selectedArchive && selectedArchive.id) {
+                                            handleSaveUserNotes(selectedArchive.id, userNotes);
+                                        } else {
+                                            console.error('❌ selectedArchive 또는 ID가 없습니다:', selectedArchive);
+                                            alert('메모 저장 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+                                        }
+                                    }}
                                     className="bg-red-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-red-600 transition-colors text-base"
                                 >
                                     메모 저장
@@ -265,7 +290,7 @@ const UserLibrary = ({
                     </div>
                 </div>
             ) : (
-                // Library List View
+                // Archive List View
                 <div className="space-y-6">
                     {/* Search and Filter Inputs */}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex gap-4">
@@ -274,8 +299,8 @@ const UserLibrary = ({
                             <input
                                 type="text"
                                 placeholder="영상 제목으로 검색..."
-                                value={librarySearchTerm}
-                                onChange={(e) => setLibrarySearchTerm(e.target.value)}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 text-base"
                             />
                         </div>
@@ -284,8 +309,8 @@ const UserLibrary = ({
                             <input
                                 type="text"
                                 placeholder="태그로 필터링..."
-                                value={libraryFilterTag}
-                                onChange={(e) => setLibraryFilterTag(e.target.value)}
+                                value={filterTag}
+                                onChange={(e) => setFilterTag(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 text-base"
                             />
                         </div>
@@ -299,7 +324,7 @@ const UserLibrary = ({
                             <p className="text-lg font-medium">검색 중...</p>
                             <p className="text-sm">잠시만 기다려주세요.</p>
                         </div>
-                    ) : libraryItems.length === 0 ? (
+                    ) : summaryArchives.length === 0 ? (
                         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
                             <div className="text-center py-12">
                                 <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -327,13 +352,13 @@ const UserLibrary = ({
                             </div>
                         </div>
                     ) : (
-                        // Library Items Grid
+                        // Archive Items Grid
                         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {libraryItems.map((item) => (
+                            {summaryArchives.map((item) => (
                                 <div
                                     key={item.id}
                                     className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-200 ease-in-out cursor-pointer"
-                                    onClick={() => setSelectedLibraryItem(item.id)}
+                                    onClick={() => setSelectedArchive(item.id)}
                                 >
                                     <img
                                         src={item.thumbnail || 'https://placehold.co/320x180/e2e8f0/64748b?text=No+Image'}
@@ -349,7 +374,7 @@ const UserLibrary = ({
                                         <div className="flex flex-wrap gap-2 justify-center">
                                             {item.hashtags?.slice(0, 3).map((tag, idx) => (
                                                 <span
-                                                    key={idx}
+                                                    key={`${item.id}-tag-${idx}-${tag}`}
                                                     className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full font-medium"
                                                 >
                                                     {tag}
@@ -399,7 +424,7 @@ const UserLibrary = ({
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-blue-700 text-sm font-medium mb-1">총 영상 수</p>
-                                                <p className="text-3xl font-bold">{libraryItems.length}</p>
+                                                <p className="text-3xl font-bold">{summaryArchives.length}</p>
                                                 <p className="text-xs text-blue-600 mt-1">저장된 요약 영상</p>
                                             </div>
                                             <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-200">
@@ -535,7 +560,7 @@ const UserLibrary = ({
                                                         
                                                         return (
                                                             <div 
-                                                                key={index} 
+                                                                key={`tag-detail-${tag.name}-${index}`} 
                                                                 className={`p-4 rounded-lg border transition-all duration-300 cursor-pointer ${
                                                                     isHovered 
                                                                         ? 'border-blue-300 bg-blue-50 shadow-md' 
@@ -621,4 +646,4 @@ const UserLibrary = ({
         </div>
     );
 };
-export default UserLibrary;
+export default SummaryArchive; 

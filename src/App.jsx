@@ -9,7 +9,7 @@ import './App.css';
 import { Home, Archive, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings, Menu, X } from 'lucide-react';
 
 // 페이지 및 모달 컴포넌트 임포트
-import LibraryPage from './pages/LibraryPage.jsx';
+import SummaryArchivePage from './pages/SummaryArchivePage.jsx';
 import MyPage from './pages/MyPage';
 import AuthPage from './pages/AuthPage.jsx';
 import AuthModal from './components/AuthModal.jsx';
@@ -261,9 +261,9 @@ function AppContent() {
 
     const menuItems = [
         { id: 'summary', label: '영상 요약', path: '/', icon: FileText },
-                    { id: 'library', label: '요약 저장소', path: '/library', icon: Archive },
+        { id: 'library', label: '요약 저장소', path: '/summary-archives', icon: Archive },
         { id: 'reminders', label: '리마인더', path: '/reminders', icon: Bell },
-        { id: 'recommendation', label: '추천', path: '/recommendation', icon: Lightbulb },
+        { id: 'recommendation', label: '추천', path: '/recommendations', icon: Lightbulb },
         { id: 'mypage', label: '마이페이지', path: '/mypage', icon: User },
     ];
 
@@ -320,7 +320,7 @@ function AppContent() {
                                     <FileText className="h-5 w-5 text-white" />
                                 </div>
                             )}
-                            {location.pathname === '/library' && (
+                            {location.pathname === '/summary-archives' && (
                                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
                                     <Archive className="h-5 w-5 text-white" />
                                 </div>
@@ -330,7 +330,7 @@ function AppContent() {
                                     <Bell className="h-5 w-5 text-white" />
                                 </div>
                             )}
-                            {location.pathname === '/recommendation' && (
+                            {location.pathname === '/recommendations' && (
                                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
                                     <Lightbulb className="h-5 w-5 text-white" />
                                 </div>
@@ -354,13 +354,9 @@ function AppContent() {
                                         </div>
                                     </div>
                                 )}
-                                {location.pathname === '/library' && (
+                                {location.pathname === '/summary-archives' && (
                                     <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">저장된 영상 요약 관리</span>
-                                        <div className="flex items-center space-x-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full mt-1">
-                                            <Play className="h-4 w-4" />
-                                            <span>내 요약 저장소</span>
-                                        </div>
+                                        <span className="text-sm text-gray-600">YouTube 영상 요약 및 학습 관리</span>
                                     </div>
                                 )}
                                 {location.pathname === '/reminders' && (
@@ -372,7 +368,7 @@ function AppContent() {
                                         </div>
                                     </div>
                                 )}
-                                {location.pathname === '/recommendation' && (
+                                {location.pathname === '/recommendations' && (
                                     <div className="flex items-end space-x-3">
                                         <span className="text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
                                         <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
@@ -419,7 +415,7 @@ function AppContent() {
                             </div>
                         } />
 
-                        <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
+                        <Route path="/summary-archives" element={isLoggedIn ? <SummaryArchivePage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
                         <Route path="/reminders"
                                element={isLoggedIn ? (
                                    <ReminderPage
@@ -430,7 +426,7 @@ function AppContent() {
                                    />
                                ) : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />}
                         />
-                        <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
+                        <Route path="/recommendations" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
 
                         <Route path="/mypage" element={isLoggedIn ? (
                             <MyPage 
