@@ -64,57 +64,76 @@ const UserLibrary = ({
         }
     }, [selectedLibraryItem]);
 
-    // 커스텀 툴크 컴포넌트 (오른쪽 고정)
-    const CustomTooltip = ({ active, payload, label, coordinate }) => {
-        if (active && payload && payload.length) {
-            const data = payload[0];
-            const total = tagChartData.reduce((sum, item) => sum + item.value, 0);
-            const percentage = ((data.value / total) * 100).toFixed(1);
-            
+    // 태그 정보 카드 컴포넌트 (파이차트 오른쪽에 고정)
+    const TagInfoCard = () => {
+        if (!hoveredTag) {
             return (
-                <div 
-                    className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs fixed" 
-                    style={{ 
-                        zIndex: 9999,
-                        right: '20px',
-                        top: coordinate ? `${coordinate.y - 50}px` : '50%',
-                        transform: 'translateY(-50%)'
-                    }}
-                >
-                    <div className="text-center mb-2">
-                        <div className="flex items-center justify-center space-x-2">
-                            <div 
-                                className="w-4 h-4 rounded-full" 
-                                style={{ backgroundColor: data.color }}
-                            ></div>
-                            <span className="font-semibold text-gray-800">{data.name}</span>
+                <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-8 w-72 h-80 flex items-center justify-center mx-auto">
+                    <div className="text-center text-gray-500">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
                         </div>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                        <p className="text-gray-600">
-                            <span className="font-medium">{data.value}</span>개 영상
-                        </p>
-                        <p className="text-gray-600">
-                            전체의 <span className="font-medium text-blue-600">{percentage}%</span>
-                        </p>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div 
-                                className="h-2 rounded-full transition-all duration-300"
-                                style={{ 
-                                    width: `${percentage}%`,
-                                    backgroundColor: data.color 
-                                }}
-                            ></div>
-                        </div>
+                        <p className="text-base font-medium">태그에 마우스를 올려보세요</p>
+                        <p className="text-sm mt-3">자세한 정보를 확인할 수 있습니다</p>
                     </div>
                 </div>
             );
         }
-        return null;
+
+        const tagData = tagChartData.find(item => item.name === hoveredTag);
+        if (!tagData) return null;
+
+        const total = tagChartData.reduce((sum, item) => sum + item.value, 0);
+        const percentage = ((tagData.value / total) * 100).toFixed(1);
+        const tagIndex = tagChartData.findIndex(item => item.name === hoveredTag);
+        const tagColor = improvedColors[tagIndex % improvedColors.length];
+
+        return (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-8 w-72 h-80 transition-all duration-300 mx-auto">
+                <div className="text-center mb-6">
+                    <div className="flex items-center justify-center space-x-3">
+                        <div 
+                            className="w-6 h-6 rounded-full shadow-sm" 
+                            style={{ backgroundColor: tagColor }}
+                        ></div>
+                        <span className="font-bold text-lg text-gray-800">{tagData.name}</span>
+                    </div>
+                </div>
+                <div className="space-y-4 text-base">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-gray-700 text-center">
+                            <span className="font-bold text-xl text-blue-600">{tagData.value}</span>
+                            <span className="text-gray-600 ml-1">개 영상</span>
+                        </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-gray-700 text-center">
+                            전체의 <span className="font-bold text-xl text-green-600">{percentage}%</span>
+                        </p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                        <div 
+                            className="h-3 rounded-full transition-all duration-500 shadow-sm"
+                            style={{ 
+                                width: `${percentage}%`,
+                                backgroundColor: tagColor 
+                            }}
+                        ></div>
+                    </div>
+                    <div className="text-center text-sm text-gray-500 mt-4">
+                        {tagData.name} 태그 분포
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     // 태그 확장/축소 상태
     const [isTagListExpanded, setIsTagListExpanded] = useState(false);
+    // 태그 상세 정보 확장/축소 상태
+    const [isTagDetailExpanded, setIsTagDetailExpanded] = useState(false);
 
     // 커스텀 레전드 컴포넌트 (상위 3개만 기본 표시)
     const CustomLegend = ({ payload }) => {
@@ -327,7 +346,7 @@ const UserLibrary = ({
                                             {item.title}
                                         </h3>
                                         <p className="text-gray-600 text-sm mb-2">{item.date}</p>
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-wrap gap-2 justify-center">
                                             {item.hashtags?.slice(0, 3).map((tag, idx) => (
                                                 <span
                                                     key={idx}
@@ -440,50 +459,57 @@ const UserLibrary = ({
                                     {tagChartData.length > 0 ? (
                                         <div className="space-y-6">
                                             {/* 차트 컨테이너 */}
-                                            <div className="relative">
-                                                <ResponsiveContainer width="100%" height={350}>
-                                                    <PieChart>
-                                                        <Pie
-                                                            data={tagChartData}
-                                                            cx="50%"
-                                                            cy="50%"
-                                                            outerRadius={80}
-                                                            innerRadius={40}
-                                                            fill="#8884d8"
-                                                            dataKey="value"
-                                                            labelLine={false}
-                                                            label={({name, percent}) => `${(percent * 100).toFixed(0)}%`}
-                                                            onMouseEnter={(data, index) => setHoveredTag(data.name)}
-                                                            onMouseLeave={() => setHoveredTag(null)}
-                                                            stroke="#ffffff"
-                                                            strokeWidth={2}
-                                                            animationDuration={1000}
-                                                            animationBegin={0}
-                                                        >
-                                                            {tagChartData.map((entry, index) => (
-                                                                <Cell 
-                                                                    key={`cell-${index}`} 
-                                                                    fill={improvedColors[index % improvedColors.length]}
-                                                                    className="transition-all duration-300"
-                                                                    style={{
-                                                                        filter: hoveredTag === entry.name ? 'brightness(1.1)' : 'brightness(1)',
-                                                                        transition: 'all 0.3s ease'
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip content={<CustomTooltip />} />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                                
-                                                {/* 중앙 통계 */}
-                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
-                                                    <div className="text-center bg-white bg-opacity-70 rounded-full p-4 shadow-lg">
-                                                        <div className="text-2xl font-bold text-gray-700">
-                                                            {tagChartData.length}
+                                            <div className="flex items-center gap-2">
+                                                {/* 파이차트 */}
+                                                <div className="relative" style={{ width: '55%' }}>
+                                                    <ResponsiveContainer width="100%" height={400}>
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={tagChartData}
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                outerRadius={100}
+                                                                innerRadius={50}
+                                                                fill="#8884d8"
+                                                                dataKey="value"
+                                                                labelLine={false}
+                                                                label={({name, percent}) => `${(percent * 100).toFixed(0)}%`}
+                                                                onMouseEnter={(data, index) => setHoveredTag(data.name)}
+                                                                onMouseLeave={() => setHoveredTag(null)}
+                                                                stroke="#ffffff"
+                                                                strokeWidth={2}
+                                                                animationDuration={1000}
+                                                                animationBegin={0}
+                                                            >
+                                                                {tagChartData.map((entry, index) => (
+                                                                    <Cell 
+                                                                        key={`cell-${index}`} 
+                                                                        fill={improvedColors[index % improvedColors.length]}
+                                                                        className="transition-all duration-300"
+                                                                        style={{
+                                                                            filter: hoveredTag === entry.name ? 'brightness(1.1)' : 'brightness(1)',
+                                                                            transition: 'all 0.3s ease'
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                            </Pie>
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                    
+                                                    {/* 중앙 통계 */}
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
+                                                        <div className="text-center bg-white bg-opacity-80 rounded-full p-4 shadow-lg">
+                                                            <div className="text-2xl font-bold text-gray-700">
+                                                                {tagChartData.length}
+                                                            </div>
+                                                            <div className="text-sm text-gray-500">총 태그</div>
                                                         </div>
-                                                        <div className="text-sm text-gray-500">총 태그</div>
                                                     </div>
+                                                </div>
+                                                
+                                                {/* 태그 정보 카드 */}
+                                                <div className="flex-shrink-0" style={{ width: '45%' }}>
+                                                    <TagInfoCard />
                                                 </div>
                                             </div>
                                             
@@ -502,7 +528,7 @@ const UserLibrary = ({
                                                     태그별 상세 정보
                                                 </h5>
                                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {tagChartData.map((tag, index) => {
+                                                    {(isTagDetailExpanded ? tagChartData : tagChartData.slice(0, 6)).map((tag, index) => {
                                                         const total = tagChartData.reduce((sum, item) => sum + item.value, 0);
                                                         const percentage = ((tag.value / total) * 100).toFixed(1);
                                                         const isHovered = hoveredTag === tag.name;
@@ -547,6 +573,26 @@ const UserLibrary = ({
                                                         );
                                                     })}
                                                 </div>
+                                                {tagChartData.length > 6 && (
+                                                    <div className="flex justify-center mt-6">
+                                                        <button 
+                                                            onClick={() => setIsTagDetailExpanded(!isTagDetailExpanded)}
+                                                            className="px-6 py-3 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors font-medium flex items-center space-x-2"
+                                                        >
+                                                            <span>
+                                                                {isTagDetailExpanded ? '접기' : `더보기 (${tagChartData.length - 6}개 더)`}
+                                                            </span>
+                                                            <svg 
+                                                                className={`h-4 w-4 transition-transform duration-200 ${isTagDetailExpanded ? 'rotate-180' : ''}`}
+                                                                fill="none" 
+                                                                stroke="currentColor" 
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ) : (

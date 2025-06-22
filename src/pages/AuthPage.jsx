@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const AuthPage = ({ onLogin, onSignup, onMessage }) => {
     const [mode, setMode] = useState('login'); // 'login' or 'signup'
@@ -7,30 +8,67 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [localMessage, setLocalMessage] = useState('');
+    const location = useLocation();
 
 
     const GOOGLE_LOGIN_URL = 'http://localhost:8080/oauth2/authorization/google';
+
+    // OAuth2 리다이렉트에서 온 에러 메시지 처리
+    useEffect(() => {
+        if (location.state?.error) {
+            setLocalMessage(location.state.error);
+        }
+        if (location.state?.message) {
+            setLocalMessage(location.state.message);
+        }
+    }, [location]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLocalMessage('');
 
-        if (mode === 'signup' && password !== confirmPassword) {
-            setLocalMessage('비밀번호가 일치하지 않습니다.');
-            return;
+        // 클라이언트 사이드 유효성 검사
+        if (mode === 'signup') {
+            // 사용자명 검사
+            if (username.length < 2 || username.length > 20) {
+                setLocalMessage('사용자명은 2자 이상 20자 이하로 입력해주세요.');
+                return;
+            }
+            
+            // 이메일 검사
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                setLocalMessage('유효한 이메일 형식이 아닙니다.');
+                return;
+            }
+            
+            // 비밀번호 검사
+            if (password.length < 8) {
+                setLocalMessage('비밀번호는 최소 8자 이상이어야 합니다.');
+                return;
+            }
+            
+            // 비밀번호 확인 검사
+            if (password !== confirmPassword) {
+                setLocalMessage('비밀번호가 일치하지 않습니다.');
+                return;
+            }
         }
 
         try {
             if (mode === 'login') {
                 await onLogin(username, password);
+                // 로그인 성공 시에는 App.jsx에서 처리됨 (모달 닫기, 페이지 이동)
             } else {
                 await onSignup(username, password, email);
-                setLocalMessage('회원가입 성공! 이제 로그인해주세요.');
+                // 회원가입 성공 시에만 실행됨 (실패 시 catch 블록으로 이동)
+                setLocalMessage('SUCCESS:회원가입 성공! 이제 로그인해주세요.');
                 setMode('login');
                 setUsername(''); setEmail(''); setPassword(''); setConfirmPassword('');
             }
         } catch (error) {
-            onMessage(error.message);
+            // 로그인/회원가입 실패 시 에러 메시지를 로컬 메시지로 표시
+            setLocalMessage(error.message);
         }
     };
 
@@ -41,7 +79,16 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
                 {mode === 'login' ? '로그인' : '회원가입'}
             </h2>
             {localMessage && (
-                <p className="text-red-500 text-sm text-center mb-4">{localMessage}</p>
+                <p className={`text-sm text-center mb-4 ${
+                    localMessage.startsWith('SUCCESS:') 
+                        ? 'text-green-600' 
+                        : 'text-red-500'
+                }`}>
+                    {localMessage.startsWith('SUCCESS:') 
+                        ? localMessage.substring(8) 
+                        : localMessage
+                    }
+                </p>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 아이디, 이메일, 비밀번호 입력 필드... (이전과 동일) */}

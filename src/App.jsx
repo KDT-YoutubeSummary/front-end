@@ -1,7 +1,7 @@
 // src/App.jsx
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import axios from 'axios';
 
 // CSS 및 아이콘 임포트
@@ -12,6 +12,7 @@ import { Home, Archive, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles,
 import LibraryPage from './pages/LibraryPage.jsx';
 import MyPage from './pages/MyPage';
 import AuthPage from './pages/AuthPage.jsx';
+import AuthModal from './components/AuthModal.jsx';
 import SummaryPage from "./pages/SummaryPage.jsx"; // SummaryPage 임포트 확인
 import { MessageModal, ReauthModal } from './components/MyPageModals.jsx';
 import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
@@ -33,9 +34,11 @@ function AppContent() {
     // 모달 상태
     const [showMessageModal, setShowMessageModal] = useState(false);
     const [messageModalContent, setMessageModalContent] = useState('');
+    const [messageModalConfirm, setMessageModalConfirm] = useState(null);
     const [showReauthModal, setShowReauthModal] = useState(false);
     const [reauthCallback, setReauthCallback] = useState(null);
     const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
@@ -51,29 +54,35 @@ function AppContent() {
                 setIsLoggedIn(true);
                 setGlobalUserName(username);
                 setGlobalUserId(userId);
+                setShowAuthModal(false); // 모달 닫기
                 handleAppShowMessage('로그인 성공!');
-                navigate('/');
+                // 요약 페이지로 이동
+                navigate('/', { replace: true });
             }
         } catch (error) {
             // 서버 응답에 따른 구체적인 오류 메시지 처리
+            let errorMessage = '';
             if (error.response) {
                 const { status, data } = error.response;
                 if (status === 401) {
                     if (data.message && data.message.includes('존재하지 않는')) {
-                        handleAppShowMessage('존재하지 않는 사용자입니다. 회원가입을 먼저 진행해주세요.');
+                        errorMessage = '존재하지 않는 사용자입니다. 회원가입을 먼저 진행해주세요.';
                     } else if (data.message && data.message.includes('비밀번호')) {
-                        handleAppShowMessage('비밀번호가 올바르지 않습니다.');
+                        errorMessage = '비밀번호가 올바르지 않습니다.';
                     } else {
-                        handleAppShowMessage('아이디 또는 비밀번호가 올바르지 않습니다.');
+                        errorMessage = '아이디 또는 비밀번호가 올바르지 않습니다.';
                     }
                 } else if (status === 400) {
-                    handleAppShowMessage(data.message || '로그인 정보를 확인해주세요.');
+                    errorMessage = data.message || '로그인 정보를 확인해주세요.';
                 } else {
-                    handleAppShowMessage(data.message || '로그인 중 오류가 발생했습니다.');
+                    errorMessage = data.message || '로그인 중 오류가 발생했습니다.';
                 }
             } else {
-                handleAppShowMessage('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+                errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
             }
+            
+            // 에러를 throw하여 AuthPage에서 로컬 메시지로 표시
+            throw new Error(errorMessage);
         }
     };
 
@@ -82,9 +91,32 @@ function AppContent() {
             // 회원가입 API 사용
             await axios.post('http://localhost:8080/api/auth/register', { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
-            navigate('/login');
+            // 회원가입 성공 시 모달은 유지하고 로그인 모드로 전환 (AuthPage에서 처리됨)
         } catch (error) {
-            handleAppShowMessage(error.response?.data?.message || '회원가입 중 오류가 발생했습니다.');
+            console.error('회원가입 오류:', error);
+            
+            // 서버 응답에 따른 구체적인 오류 메시지 처리
+            let errorMessage = '';
+            if (error.response) {
+                const { status, data } = error.response;
+                if (status === 400 || status === 409) {
+                    // 백엔드에서 UserAlreadyExistsException을 던지는 경우
+                    // 백엔드에서 보내는 구체적인 메시지 우선 사용
+                    errorMessage = data.message || data.error || '회원가입 중 오류가 발생했습니다.';
+                } else if (status === 500) {
+                    errorMessage = data.message || '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                } else {
+                    errorMessage = data.message || `회원가입 중 오류가 발생했습니다. (상태: ${status})`;
+                }
+            } else if (error.request) {
+                errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+            } else {
+                errorMessage = '회원가입 중 예상치 못한 오류가 발생했습니다.';
+            }
+            
+            // 오류 메시지를 표시하고 에러를 다시 던져서 AuthPage에서 성공 처리를 하지 않도록 함
+            handleAppShowMessage(errorMessage);
+            throw new Error(errorMessage);
         }
     };
 
@@ -110,9 +142,22 @@ function AppContent() {
         navigate('/', { replace: true });
     };
 
-    const handleAppShowMessage = (message) => {
+    const handleAppShowMessage = (message, onConfirm = null) => {
         setMessageModalContent(message);
+        setMessageModalConfirm(() => onConfirm);
         setShowMessageModal(true);
+    };
+
+    const handleShowAuthModal = () => {
+        setShowAuthModal(true);
+    };
+
+    const handleCloseAuthModal = () => {
+        setShowAuthModal(false);
+        // 로그인 모달을 닫을 때 홈으로 이동
+        if (location.pathname !== '/') {
+            navigate('/', { replace: true });
+        }
     };
 
     // ✅ 모든 axios 요청에 공통 인증 헤더를 추가하는 인터셉터 설정
@@ -243,10 +288,10 @@ function AppContent() {
                             <span className="hidden md:block font-medium">로그아웃</span>
                         </button>
                     ) : (
-                        <Link to="/login" className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
+                        <button onClick={handleShowAuthModal} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
                             <User className="h-5 w-5" />
                             <span className="hidden md:block font-medium">로그인/회원가입</span>
-                        </Link>
+                        </button>
                     )}
                 </div>
             </nav>
@@ -358,11 +403,11 @@ function AppContent() {
                         <Route path="/" element={
                             <div>
                                 {console.log('SummaryPage 렌더링 시작')}
-                                <SummaryPage />
+                                <SummaryPage onShowAuthModal={handleShowAuthModal} isLoggedIn={isLoggedIn} />
                             </div>
                         } />
 
-                        <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
+                        <Route path="/library" element={isLoggedIn ? <LibraryPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
                         <Route path="/reminders"
                                element={isLoggedIn ? (
                                    <ReminderPage
@@ -371,9 +416,9 @@ function AppContent() {
                                        setMessageModalContent={setMessageModalContent} // 메시지 모달 관련 props 전달
                                        setShowMessageModal={setShowMessageModal} // 메시지 모달 관련 props 전달
                                    />
-                               ) : <AuthRedirect onShowMessage={handleAppShowMessage} />}
+                               ) : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />}
                         />
-                        <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
+                        <Route path="/recommendation" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
 
                         <Route path="/mypage" element={isLoggedIn ? (
                             <MyPage 
@@ -388,9 +433,9 @@ function AppContent() {
                                 onSetReauthCallback={setReauthCallback} 
                                 onUserLoggedOut={(message) => handleLogout(message || '로그아웃 되었습니다.')} 
                             />
-                        ) : <AuthRedirect onShowMessage={handleAppShowMessage} />} />
+                        ) : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
 
-                        <Route path="/login" element={<AuthPage onLogin={handleLoginSubmit} onSignup={handleSignupSubmit} onMessage={handleAppShowMessage} />} />
+                        <Route path="/login" element={<Navigate to="/" replace />} />
                         <Route path="/oauth/redirect" element={<OAuth2RedirectHandler />} />
                     </Routes>
                 </main>
@@ -400,7 +445,16 @@ function AppContent() {
             {showMessageModal && (
                 <MessageModal
                     message={messageModalContent}
-                    onClose={() => setShowMessageModal(false)}
+                    onClose={() => {
+                        setShowMessageModal(false);
+                        setMessageModalConfirm(null);
+                    }}
+                    onConfirm={messageModalConfirm ? () => {
+                        setShowMessageModal(false);
+                        messageModalConfirm();
+                        setMessageModalConfirm(null);
+                    } : null}
+                    isConfirm={!!messageModalConfirm}
                 />
             )}
             {showReauthModal && (
@@ -418,16 +472,24 @@ function AppContent() {
                     onCancel={() => setShowLogoutConfirmModal(false)}
                 />
             )}
+            {showAuthModal && (
+                <AuthModal
+                    onLogin={handleLoginSubmit}
+                    onSignup={handleSignupSubmit}
+                    onMessage={handleAppShowMessage}
+                    onClose={handleCloseAuthModal}
+                />
+            )}
         </div>
     );
 }
 
-function AuthRedirect({ onShowMessage }) {
-    const navigate = useNavigate();
+function AuthRedirect({ onShowMessage, onShowAuthModal }) {
     useEffect(() => {
-        onShowMessage("이 서비스를 이용하려면 로그인이 필요합니다.");
-        navigate('/login');
-    }, [navigate, onShowMessage]);
+        // 메시지를 표시하고 확인 버튼을 클릭하면 로그인 모달이 뜨도록 함
+        onShowMessage("로그인이 필요한 서비스입니다.", onShowAuthModal);
+    }, [onShowMessage, onShowAuthModal]);
+    
     return null;
 }
 

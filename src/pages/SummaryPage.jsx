@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { FileText, Play, Sparkles } from 'lucide-react';
+import SummaryTypingGame from '../components/game/SummaryTypingGame';
 
-export default function SummaryPage() {
+export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
     const [summaryType, setSummaryType] = useState('기본 요약');
     const [userPurpose, setUserPurpose] = useState('');
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [summaryData, setSummaryData] = useState(null); // 백엔드 SummaryResponseDTO에 매핑
     const [error, setError] = useState('');
+    const [summaryComplete, setSummaryComplete] = useState(false);
 
     const summaryTypesOptions = ['기본 요약', '3줄 요약', '키워드 요약', '타임라인 요약'];
     const summaryTypeMap = {
@@ -18,10 +20,15 @@ export default function SummaryPage() {
         '타임라인 요약': 'TIMELINE'
     };
 
-    // 로그인 상태 확인
-    const isLoggedIn = !!localStorage.getItem('accessToken');
+
 
     const handleSubmit = async () => {
+        // 로그인 체크 먼저 수행
+        if (!isLoggedIn) {
+            onShowAuthModal();
+            return;
+        }
+        
         if (!youtubeUrl.trim()) {
             setError('YouTube URL을 입력해주세요.');
             return;
@@ -38,10 +45,24 @@ export default function SummaryPage() {
         const rawUserId = localStorage.getItem('userId');
         const userId = rawUserId && !isNaN(Number(rawUserId)) ? parseInt(rawUserId, 10) : null;
 
-        // 프론트엔드에서 로그인 여부를 확인하는 로직은 유지합니다.
-        // 백엔드 요청 바디에 userId를 포함할 필요는 없어진 것입니다.
-        if (!token || !userId) {
-            setError('로그인이 필요합니다. 다시 로그인해 주세요.');
+        // 토큰 유효성 검사 강화
+        if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
+            setError('🔐 로그인 토큰이 없습니다.\n\n페이지를 새로고침하여 다시 로그인해주세요.');
+            return;
+        }
+
+        if (!userId || userId <= 0) {
+            setError('👤 사용자 정보를 찾을 수 없습니다.\n\n페이지를 새로고침하여 다시 로그인해주세요.');
+            return;
+        }
+
+        // JWT 토큰 기본 형식 검증 (선택적)
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+            console.warn('⚠️ 잘못된 JWT 토큰 형식');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userId');
+            setError('🔐 잘못된 토큰 형식입니다.\n\n페이지를 새로고침하여 다시 로그인해주세요.');
             return;
         }
 
@@ -51,27 +72,48 @@ export default function SummaryPage() {
 
         try {
             console.log('--- 요약 요청 시작 ---');
-            console.log('🔐 accessToken:', token ? '존재함' : '없음');
+            console.log('🔐 accessToken:', token ? `존재함 (길이: ${token.length})` : '없음');
+            console.log('👤 userId:', userId);
             console.log('🔗 YouTube URL (originalUrl):', youtubeUrl);
             console.log('📝 Summary Type:', summaryTypeMap[summaryType]);
             console.log('🎯 User Prompt:', userPurpose?.trim() || '없음');
+            console.log('📋 요청 헤더:', `Authorization: Bearer ${token.substring(0, 20)}...`);
 
-            // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
-            const response = await axios.post('http://localhost:8080/api/youtube/upload', {
+            const requestData = {
                 originalUrl: youtubeUrl,
                 userPrompt: userPurpose?.trim() || null,
                 summaryType: summaryTypeMap[summaryType]
-            }, {
+            };
+            console.log('📦 요청 데이터:', requestData);
+
+            // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
+            const response = await axios.post('http://localhost:8080/api/youtube/upload', requestData, {
                 headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 30000 // 30초 타임아웃
             });
 
             console.log('✅ 요약 성공:', response.data);
-            setSummaryData(response.data); // 백엔드 SummaryResponseDTO 데이터 저장
+            setSummaryComplete(true); // 요약 완료 상태 먼저 설정
+            
+            // 3초 후 요약 데이터 설정 (게임 완료 화면을 위한 딜레이)
+            setTimeout(() => {
+                setSummaryData(response.data); // 백엔드 SummaryResponseDTO 데이터 저장
+                setIsLoading(false);
+                setSummaryComplete(false);
+            }, 3000);
 
         } catch (err) {
             console.error('❌ 요약 생성 실패:', err);
+            console.error('에러 상세 정보:', {
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                data: err.response?.data,
+                config: err.config,
+                message: err.message
+            });
             
             // 서버에서 반환된 에러 메시지 처리
             let errorMessage = '';
@@ -86,19 +128,32 @@ export default function SummaryPage() {
             }
             
             // 특정 에러 케이스별 사용자 친화적 메시지 제공
-            if (errorMessage.includes('YouTube video transcript not found') || errorMessage.includes('not processed')) {
-                setError('이 YouTube 동영상의 자막을 찾을 수 없습니다. 다음을 확인해주세요:\n\n• 동영상에 자막이 있는지 확인\n• 동영상이 공개 상태인지 확인\n• 올바른 YouTube URL인지 확인\n• 다른 동영상으로 시도해보세요');
-            } else if (err.response?.status === 401) {
-                setError('인증 실패: 로그인 세션이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.');
+            if (err.message && err.message.includes('Network Error')) {
+                setError('🌐 네트워크 연결 오류\n\n서버에 연결할 수 없습니다. 다음을 확인해주세요:\n\n• 인터넷 연결 상태 확인\n• 백엔드 서버가 실행 중인지 확인 (localhost:8080)\n• 방화벽이나 보안 프로그램 확인\n• 잠시 후 다시 시도해보세요');
+            } else if (err.code === 'ERR_NETWORK') {
+                setError('🔌 서버 연결 실패\n\n백엔드 서버(localhost:8080)에 연결할 수 없습니다.\n서버가 실행 중인지 확인해주세요.');
+            } else if (err.response?.status === 401 || errorMessage.includes('oauth_failed') || errorMessage.includes('OAuth2')) {
+                // 인증 실패 시 로그인 토큰 제거
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('userId');
+                setError('🔐 인증 만료\n\n로그인 세션이 만료되었습니다.\n페이지를 새로고침하여 다시 로그인해주세요.\n\n새로고침 후에도 문제가 지속되면:\n• 브라우저 캐시 삭제\n• 다른 브라우저로 시도\n• 개발자에게 문의');
+            } else if (err.response?.status === 403) {
+                setError('⛔ 접근 권한 없음\n\n이 기능을 사용할 권한이 없습니다.\n관리자에게 문의하거나 다시 로그인해보세요.');
             } else if (err.response?.status === 500) {
-                setError(`서버 오류가 발생했습니다: ${errorMessage || '알 수 없는 서버 오류'}\n\n잠시 후 다시 시도해주세요.`);
+                setError(`🚨 서버 내부 오류\n\n서버에서 처리 중 오류가 발생했습니다:\n${errorMessage || '알 수 없는 서버 오류'}\n\n• 잠시 후 다시 시도해보세요\n• 문제가 지속되면 개발자에게 문의하세요`);
+            } else if (errorMessage.includes('YouTube video transcript not found') || errorMessage.includes('not processed')) {
+                setError('📺 YouTube 자막 오류\n\n이 동영상의 자막을 찾을 수 없습니다:\n\n• 동영상에 자막이 있는지 확인\n• 동영상이 공개 상태인지 확인\n• 올바른 YouTube URL인지 확인\n• 다른 동영상으로 시도해보세요');
+            } else if (err.message && err.message.includes('CORS')) {
+                setError('🔗 CORS 정책 오류\n\n브라우저 보안 정책으로 인한 오류입니다:\n\n• 백엔드 서버의 CORS 설정 확인 필요\n• 개발자에게 문의하세요\n• 임시로 브라우저의 CORS 확장프로그램 사용 가능');
             } else if (errorMessage) {
-                setError(errorMessage);
+                setError(`❌ 요약 처리 오류\n\n${errorMessage}\n\n문제가 지속되면 개발자에게 문의하세요.`);
             } else {
-                setError('요약 생성 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                setError('❓ 알 수 없는 오류\n\n요약 생성 중 예상치 못한 오류가 발생했습니다.\n\n• 페이지 새로고침 후 다시 시도\n• 다른 YouTube URL로 테스트\n• 브라우저 개발자 도구에서 자세한 오류 확인\n• 문제가 지속되면 개발자에게 문의');
             }
-        } finally {
+            
             setIsLoading(false);
+            setSummaryComplete(false);
+        } finally {
             console.log('--- 요약 요청 종료 ---');
         }
     };
@@ -109,6 +164,7 @@ export default function SummaryPage() {
         setSummaryType('기본 요약');
         setSummaryData(null);
         setError('');
+        setSummaryComplete(false);
     };
 
     return (
@@ -230,7 +286,7 @@ export default function SummaryPage() {
 
                     <button
                         onClick={handleSubmit}
-                        disabled={isLoading || !youtubeUrl.trim() || !isLoggedIn}
+                        disabled={isLoading || !youtubeUrl.trim()}
                         className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out flex items-center justify-center gap-2 text-base"
                     >
                         {isLoading ? (
@@ -241,8 +297,22 @@ export default function SummaryPage() {
                                 </svg>
                                 요약 중...
                             </>
-                        ) : !isLoggedIn ? '로그인 후 요약하기' : '요약 시작'}
+                        ) : '요약 시작'}
                     </button>
+
+                    {/* 요약 중일 때 타자 게임 표시 */}
+                    {isLoading && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-2xl p-2 max-w-lg w-full mx-4 shadow-2xl">
+                                <SummaryTypingGame 
+                                    summaryComplete={summaryComplete}
+                                    onComplete={() => {
+                                        // 게임 완료 시 모달 닫기 처리 (자동으로 처리됨)
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

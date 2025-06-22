@@ -202,15 +202,29 @@ const LibraryPage = () => {
         if (tagStatsData.length === 0) { setTagChartData([]); return; }
         const totalCount = tagStatsData.reduce((sum, tag) => sum + tag.value, 0);
         if (totalCount === 0) { setTagChartData([]); return; }
-        let otherSum = 0;
-        let processedChartData = [];
-        tagStatsData.forEach(tag => {
-            if ((tag.value / totalCount) < 0.05) otherSum += tag.value;
-            else processedChartData.push(tag);
+        
+        // 값 기준으로 정렬
+        const sortedData = [...tagStatsData].sort((a, b) => b.value - a.value);
+        
+        // 1% 미만인 태그들을 기타로 묶기
+        const threshold = totalCount * 0.01; // 1%
+        const mainTags = [];
+        let otherCount = 0;
+        
+        sortedData.forEach(tag => {
+            if (tag.value >= threshold) {
+                mainTags.push(tag);
+            } else {
+                otherCount += tag.value;
+            }
         });
-        processedChartData.sort((a, b) => b.value - a.value);
-        if (otherSum > 0) processedChartData.push({ name: '기타', value: otherSum });
-        setTagChartData(processedChartData);
+        
+        // 기타 항목이 있으면 추가
+        if (otherCount > 0) {
+            mainTags.push({ name: '기타', value: otherCount });
+        }
+        
+        setTagChartData(mainTags);
     }, [tagStatsData]);
 
     // --- 선택된 ID를 기반으로 실제 아이템 객체를 찾는 파생 상태 ---
@@ -324,7 +338,7 @@ const LibraryPage = () => {
             let recommendationMessage = "\n\n하지만 추천 영상 생성에는 실패했습니다.";
             try {
                 await axios.post(`http://localhost:8080/api/recommendations/ai/${reminderItem.id}`, {}, { headers });
-                recommendationMessage = "\n\n또한, 5개의 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
+                recommendationMessage = "\n\n또한, 추천 영상이 생성되었습니다.\n'추천 페이지'에서 확인하세요!";
             } catch (recError) { 
                 console.error("❌ 추천 영상 생성 API 호출 실패:", recError); 
             }
@@ -360,7 +374,7 @@ const LibraryPage = () => {
                 COLORS={COLORS}
             />
 
-            {isGenerating && <LoadingModal message="리마인더 저장 & 추천 영상 생성 중..." />}
+            {isGenerating && <LoadingModal message="리마인더 생성 중..." />}
 
             {showMessageModal && (<MessageModal message={messageModalContent} onClose={() => setShowMessageModal(false)} />)}
             {isReminderModalOpen && reminderItem && (
