@@ -570,7 +570,7 @@ import RecommendationPage from './pages/RecommendationPage.jsx';
 import { MessageModal, ReauthModal } from './components/MyPageModals.jsx';
 
 // ✅ EC2 서버 주소만 여기에 설정
-const BASE_URL = "http://43.203.114.254:8080/api";
+const BASE_URL = "/api";
 
 function AppContent() {
     const navigate = useNavigate();
