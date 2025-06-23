@@ -152,7 +152,30 @@ const SummaryArchivePage = () => {
     useEffect(() => {
         const fetchArchives = async () => {
             setIsSearching(true);
+            
+            // 로그인 상태 확인
+            const token = localStorage.getItem('accessToken');
+            const userId = localStorage.getItem('userId');
+            
+            if (!token || !userId) {
+                console.warn('🔐 로그인 정보가 없습니다.');
+                setMessageModalContent('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+                setShowMessageModal(true);
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+                setIsSearching(false);
+                return;
+            }
+            
             try {
+                console.log('🚀 요약 저장소 조회 시작:', {
+                    searchTerm,
+                    filterTag,
+                    token: token ? `${token.substring(0, 20)}...` : 'null',
+                    userId
+                });
+                
                 let res;
                 if (searchTerm || filterTag) {
                     // 검색 API 사용
@@ -163,6 +186,14 @@ const SummaryArchivePage = () => {
                 }
 
                 console.log('📋 요약 저장소 목록 응답:', res);
+                
+                // 응답 데이터 구조 확인
+                if (!res || !res.data) {
+                    console.warn('⚠️ 응답 데이터가 없습니다:', res);
+                    setSummaryArchives([]);
+                    setIsSearching(false);
+                    return;
+                }
                 
                 const sortedData = (res.data || [])
                     .sort((a, b) => new Date(b.last_viewed_at || b.lastViewedAt || b.saved_at || b.savedAt) - new Date(a.last_viewed_at || a.lastViewedAt || a.saved_at || a.savedAt))
@@ -180,10 +211,34 @@ const SummaryArchivePage = () => {
                 fetchTagStats();
             } catch (err) { 
                 console.error('❌ 요약 저장소 조회 실패:', err);
-                // 인증 오류 시 로그인 페이지로 리다이렉트
-                if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-                    window.location.href = '/login';
+                console.error('❌ 에러 상세 정보:', {
+                    message: err.message,
+                    status: err.response?.status,
+                    statusText: err.response?.statusText,
+                    data: err.response?.data
+                });
+                
+                let errorMessage = '요약 저장소를 불러오는 중 오류가 발생했습니다.';
+                
+                if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+                    errorMessage = '🌐 서버에 연결할 수 없습니다.\n\n백엔드 서버(localhost:8080)가 실행 중인지 확인해주세요.';
+                } else if (err.response?.status === 401) {
+                    errorMessage = '🔐 인증이 만료되었습니다.\n\n로그인 페이지로 이동합니다.';
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('userId');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (err.response?.status === 403) {
+                    errorMessage = '⛔ 접근 권한이 없습니다.\n\n관리자에게 문의하세요.';
+                } else if (err.response?.status === 500) {
+                    errorMessage = '🚨 서버 내부 오류가 발생했습니다.\n\n잠시 후 다시 시도해주세요.';
+                } else if (err.response?.status === 404) {
+                    errorMessage = '📭 요약 저장소가 없습니다.\n\n먼저 영상을 요약해보세요.';
                 }
+                
+                setMessageModalContent(errorMessage);
+                setShowMessageModal(true);
             }
             finally { setIsSearching(false); }
         };

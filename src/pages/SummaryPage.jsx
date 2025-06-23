@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { FileText, Play, Sparkles } from 'lucide-react';
+import { youtubeApi } from '../services/api.jsx';
 import SummaryTypingGame from '../components/game/SummaryTypingGame';
 
 export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
@@ -11,6 +11,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
     const [summaryData, setSummaryData] = useState(null); // 백엔드 SummaryResponseDTO에 매핑
     const [error, setError] = useState('');
     const [summaryComplete, setSummaryComplete] = useState(false);
+    const [showSummaryInfo, setShowSummaryInfo] = useState(false);
 
     const summaryTypesOptions = ['기본 요약', '3줄 요약', '키워드 요약', '타임라인 요약'];
     const summaryTypeMap = {
@@ -86,21 +87,40 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
             };
             console.log('📦 요청 데이터:', requestData);
 
-            // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
-            const response = await axios.post('http://localhost:8080/api/youtube/upload', requestData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 300000 // 5분 타임아웃
-            });
+            // API 서비스를 통한 일관성 있는 요청 처리
+            const response = await youtubeApi.uploadVideo(
+                youtubeUrl,
+                userPurpose?.trim() || null,
+                summaryTypeMap[summaryType]
+            );
 
-            console.log('✅ 요약 성공:', response.data);
+            console.log('✅ 요약 성공:', response);
+            
+            // 백엔드 응답 구조: { code: 200, data: {...}, message: "..." }
+            const actualData = response?.data || response; // 실제 요약 데이터 추출
+            
+            console.log('📋 응답 데이터 구조 확인:', {
+                responseStructure: {
+                    code: response?.code,
+                    message: response?.message,
+                    hasData: !!response?.data
+                },
+                actualData: {
+                    title: actualData?.title,
+                    summary: actualData?.summary,
+                    thumbnailUrl: actualData?.thumbnailUrl,
+                    uploaderName: actualData?.uploaderName,
+                    viewCount: actualData?.viewCount,
+                    tags: actualData?.tags,
+                    allKeys: Object.keys(actualData || {})
+                }
+            });
+            
             setSummaryComplete(true); // 요약 완료 상태 먼저 설정
             
             // 3초 후 요약 데이터 설정 (게임 완료 화면을 위한 딜레이)
             setTimeout(() => {
-                setSummaryData(response.data); // 백엔드 SummaryResponseDTO 데이터 저장
+                setSummaryData(actualData); // 실제 요약 데이터 저장
                 setIsLoading(false);
                 setSummaryComplete(false);
             }, 3000);
@@ -170,50 +190,202 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
     return (
         <div className="max-w-6xl mx-auto p-6 space-y-8">
             {summaryData ? (
-                <div className="space-y-6">
-                    <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
-                        <div className="p-6 border-b space-y-2">
-                            {/* 썸네일 + 제목 + 업로더 + 조회수 */}
-                            <div className="flex items-start gap-4">
-                                {summaryData.thumbnailUrl && (
-                                    <img src={summaryData.thumbnailUrl} alt="썸네일" className="w-32 h-20 object-cover rounded-lg shadow" />
-                                )}
-                                <div className="text-left">
-                                    <h3 className="text-xl font-bold text-gray-800 break-words">{summaryData.title || '제목 없음'}</h3>
-                                    <p className="text-sm text-gray-500">업로더: {summaryData.uploaderName || '알 수 없음'}</p>
-                                    {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
-                                        <p className="text-sm text-gray-500">조회수: {summaryData.viewCount.toLocaleString()}회</p>
-                                    )}
+                <div className="max-w-4xl mx-auto space-y-6">
+                    {/* 메인 비디오 영역 (YouTube 스타일) */}
+                    <div className="space-y-4">
+                        {/* 비디오 썸네일 (적당한 크기, YouTube 스타일) */}
+                        <div 
+                            className="relative w-full h-64 lg:h-80 bg-black rounded-xl overflow-hidden shadow-xl cursor-pointer"
+                            onClick={() => window.open(youtubeUrl, '_blank')}
+                        >
+                            {summaryData.thumbnailUrl ? (
+                                <img 
+                                    src={summaryData.thumbnailUrl} 
+                                    alt="영상 썸네일" 
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                                    <Play className="w-20 h-20 text-white opacity-50" />
+                                </div>
+                            )}
+                            
+                            {/* 재생 오버레이 */}
+                            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                                <div className="bg-red-600 rounded-full p-4 transform hover:scale-110 transition-transform duration-200">
+                                    <Play className="w-8 h-8 text-white fill-current" />
                                 </div>
                             </div>
+                            
+                            {/* 영상 길이 표시 (오른쪽 하단) */}
+                            {summaryData.duration && (
+                                <div className="absolute bottom-2 right-2 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded">
+                                    {summaryData.duration}
+                                </div>
+                            )}
+                        </div>
 
-                            {/* 요약 본문 */}
-                            <div className="mt-4 prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed bg-green-50 p-4 rounded-lg border border-green-100 text-base">
-                                {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
+                        {/* 비디오 제목 및 메타데이터 */}
+                        <div className="space-y-3">
+                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+                                {summaryData.title || '제목 없음'}
+                            </h1>
+                            
+                            {/* 조회수, 업로드 날짜, 좋아요 등 (YouTube 스타일) */}
+                            <div className="flex items-center justify-between text-sm text-gray-600">
+                                <div className="flex items-center space-x-4">
+                                    {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
+                                        <span>조회수 {summaryData.viewCount.toLocaleString()}회</span>
+                                    )}
+                                    {summaryData.uploadDate && (
+                                        <span>{summaryData.uploadDate}</span>
+                                    )}
+                                </div>
+                                
+                                {/* 액션 버튼들 (YouTube 스타일) */}
+                                <div className="flex items-center space-x-3">
+                                    <button className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"/>
+                                        </svg>
+                                        <span className="text-sm font-medium">좋아요</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
+                                        </svg>
+                                        <span className="text-sm font-medium">공유</span>
+                                    </button>
+                                    <button 
+                                        onClick={reset}
+                                        className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 py-1.5 rounded-full font-medium text-sm transition-all duration-200 transform hover:scale-[1.02] shadow-md hover:shadow-lg"
+                                    >
+                                        새로운 요약하기
+                                    </button>
+                                </div>
                             </div>
+                        </div>
 
-                            {/* 태그 */}
-                            {summaryData.tags && summaryData.tags.length > 0 && (
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {summaryData.tags.map(tag => (
+                        {/* 채널 정보 (YouTube 스타일) */}
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-bold text-sm">
+                                        {(summaryData.uploaderName || 'U').charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">
+                                        {summaryData.uploaderName || '알 수 없는 채널'}
+                                    </h3>
+                                    <p className="text-xs text-gray-500">구독자 정보 없음</p>
+                                </div>
+                            </div>
+                            <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full font-medium text-sm transition-colors">
+                                구독
+                            </button>
+                        </div>
+
+                        {/* AI 요약 섹션 */}
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+                            <div className="flex items-center space-x-2 mb-4">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <Sparkles className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <h2 className="text-lg font-bold text-blue-900">AI 요약</h2>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                                    {summaryType}
+                                </span>
+                            </div>
+                            
+                            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                                <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
+                                    {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 주요 키워드 섹션 */}
+                        {summaryData.tags && summaryData.tags.length > 0 && (
+                            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                    <FileText className="w-5 h-5 mr-2 text-gray-600" />
+                                    주요 키워드
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {summaryData.tags.map((tag, index) => (
                                         <span
                                             key={tag}
-                                            className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full"
+                                            className={`inline-block px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer hover:scale-105 transform ${
+                                                index % 4 === 0 ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                                                index % 4 === 1 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                                                index % 4 === 2 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                                                'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                            }`}
                                         >
                                             #{tag}
                                         </span>
                                     ))}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* 요약 정보 (접을 수 있는 섹션) */}
+                        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                            <button 
+                                onClick={() => setShowSummaryInfo(!showSummaryInfo)}
+                                className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-xl"
+                            >
+                                <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                                    <svg className="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                                    </svg>
+                                    요약 정보
+                                </h3>
+                                <svg 
+                                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showSummaryInfo ? 'rotate-180' : ''}`} 
+                                    fill="currentColor" 
+                                    viewBox="0 0 20 20"
+                                >
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
+                                </svg>
+                            </button>
+                            
+                            {showSummaryInfo && (
+                                <div className="px-6 pb-6 space-y-3 text-sm border-t border-gray-100">
+                                    <div className="flex justify-between py-2">
+                                        <span className="text-gray-600">요약 타입:</span>
+                                        <span className="font-medium text-gray-900">{summaryType}</span>
+                                    </div>
+                                    <div className="flex justify-between py-2">
+                                        <span className="text-gray-600">처리 시간:</span>
+                                        <span className="font-medium text-gray-900">약 2분</span>
+                                    </div>
+                                    <div className="flex justify-between py-2">
+                                        <span className="text-gray-600">AI 모델:</span>
+                                        <span className="font-medium text-gray-900">GPT-4</span>
+                                    </div>
+                                    {summaryData.summaryId && (
+                                        <div className="flex justify-between py-2">
+                                            <span className="text-gray-600">요약 ID:</span>
+                                            <span className="font-medium text-gray-900 font-mono text-xs">#{summaryData.summaryId}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between py-2">
+                                        <span className="text-gray-600">원본 URL:</span>
+                                        <a 
+                                            href={youtubeUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="font-medium text-blue-600 hover:text-blue-800 text-xs truncate max-w-48"
+                                        >
+                                            {youtubeUrl}
+                                        </a>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
-
-                    <button
-                        onClick={reset}
-                        className="w-full bg-blue-50 text-blue-700 py-3 px-8 rounded-lg hover:bg-blue-100 transition duration-200 ease-in-out border border-blue-200 font-medium text-base"
-                    >
-                        새로운 요약하기
-                    </button>
                 </div>
             ) : (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 space-y-6">

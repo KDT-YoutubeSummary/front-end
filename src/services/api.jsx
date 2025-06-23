@@ -52,14 +52,51 @@ export const youtubeApi = {
   // 유튜브 영상 업로드 및 요약 요청
   uploadVideo: async (originalUrl, userPrompt, summaryType) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/youtube/upload`, { // 'api' 대신 'axios' 사용
+      console.log('🚀 유튜브 요약 API 호출 시작:', {
+        originalUrl,
+        userPrompt,
+        summaryType,
+        endpoint: `${API_BASE_URL}/api/youtube/upload`
+      });
+
+      const requestData = {
         originalUrl,
         userPrompt,
         summaryType
+      };
+
+      const response = await axios.post(`${API_BASE_URL}/api/youtube/upload`, requestData, {
+        timeout: 300000, // 5분 타임아웃
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+
+      console.log('✅ 유튜브 요약 API 응답:', {
+        status: response.status,
+        data: response.data
+      });
+
+      // 응답 데이터가 예상 구조인지 검증
+      if (!response.data) {
+        console.warn('⚠️ 응답 데이터가 없습니다');
+        throw new Error('서버에서 응답 데이터를 받지 못했습니다');
+      }
+
       return response.data;
     } catch (error) {
-      console.error('유튜브 영상 업로드 실패:', error);
+      console.error('❌ 유튜브 영상 업로드 실패:', error);
+      
+      // 자세한 에러 정보 로깅
+      if (error.response) {
+        console.error('에러 응답 데이터:', error.response.data);
+        console.error('에러 상태 코드:', error.response.status);
+      } else if (error.request) {
+        console.error('요청이 전송되었지만 응답을 받지 못함:', error.request);
+      } else {
+        console.error('요청 설정 중 오류:', error.message);
+      }
+      
       throw error;
     }
   }
@@ -393,10 +430,46 @@ export const summaryArchiveApi = {
   // 요약 저장소 전체 조회
   getArchives: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/summary-archives`);
+      console.log('🚀 요약 저장소 전체 조회 API 시작');
+      console.log('🔗 요청 URL:', `${API_BASE_URL}/api/summary-archives`);
+      
+      // 인증 토큰 확인
+      const token = localStorage.getItem('accessToken');
+      console.log('🔐 토큰 상태:', token ? `존재함 (${token.substring(0, 20)}...)` : '없음');
+      
+      const response = await axios.get(`${API_BASE_URL}/api/summary-archives`, {
+        timeout: 10000, // 10초 타임아웃
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('✅ 요약 저장소 조회 성공:', {
+        status: response.status,
+        dataType: typeof response.data,
+        dataKeys: response.data ? Object.keys(response.data) : 'null',
+        dataLength: Array.isArray(response.data?.data) ? response.data.data.length : 'not array'
+      });
+      
       return response.data;
     } catch (error) {
-      console.error('요약 저장소 조회 실패:', error);
+      console.error('❌ 요약 저장소 조회 실패:', error);
+      console.error('❌ 에러 상세:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      
+      // 네트워크 에러인지 확인
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        const networkError = new Error('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+        networkError.isNetworkError = true;
+        throw networkError;
+      }
+      
       throw error;
     }
   },
