@@ -42,7 +42,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
                     headers: {
                         'Authorization': `Bearer ${token}`
                     },
-                    timeout: 10000 // 10초 타임아웃 추가
+                    timeout: 300000 // 5분 타임아웃
                 });
 
                 console.log("MyPage: /api/mypage 응답 받음. 상태:", response.status, response.statusText);

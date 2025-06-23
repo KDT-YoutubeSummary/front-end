@@ -92,7 +92,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 30000 // 30초 타임아웃
+                timeout: 300000 // 5분 타임아웃
             });
 
             console.log('✅ 요약 성공:', response.data);

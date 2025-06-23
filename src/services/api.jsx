@@ -286,8 +286,8 @@ export const recommendationApi = {
       
       // axios 요청 (인터셉터가 자동으로 Authorization 헤더를 추가하므로 중복 방지)
       const response = await axios.post(`${API_BASE_URL}/api/recommendations/ai/${archiveId}`, {}, {
-        // 타임아웃 설정 (30초)
-        timeout: 30000,
+        // 타임아웃 설정 (5분)
+        timeout: 300000,
         // 리디렉션을 따르지 않도록 설정
         maxRedirects: 0,
         // 모든 상태 코드를 일단 허용 (에러 처리를 직접 수행)
