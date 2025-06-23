@@ -5,6 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173, // Vite 기본 포트 5173 사용
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://43.203.114.254:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 })
