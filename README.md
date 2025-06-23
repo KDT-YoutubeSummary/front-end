@@ -123,7 +123,8 @@ yarn install
 `.env` 파일을 생성하고 다음 변수들을 설정하세요:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080
+VITE_API_BASE_URL=http://52.78.6.200
+
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
@@ -202,7 +203,8 @@ YouTube 영상 요약의 핵심 페이지입니다.
 // src/services/api.jsx
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200
+';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

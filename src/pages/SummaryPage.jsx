@@ -87,7 +87,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
             console.log('📦 요청 데이터:', requestData);
 
             // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
-            const response = await axios.post('http://localhost:8080/api/youtube/upload', requestData, {
+            const response = await axios.post('http://52.78.6.200/api/youtube/upload', requestData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
             
             // 특정 에러 케이스별 사용자 친화적 메시지 제공
             if (err.message && err.message.includes('Network Error')) {
-                setError('🌐 네트워크 연결 오류\n\n서버에 연결할 수 없습니다. 다음을 확인해주세요:\n\n• 인터넷 연결 상태 확인\n• 백엔드 서버가 실행 중인지 확인 (localhost:8080)\n• 방화벽이나 보안 프로그램 확인\n• 잠시 후 다시 시도해보세요');
+                setError('🌐 네트워크 연결 오류\n\n서버에 연결할 수 없습니다. 다음을 확인해주세요:\n\n• 인터넷 연결 상태 확인\n• 백엔드 서버가 실행 중인지 확인 (52.78.6.200)\n• 방화벽이나 보안 프로그램 확인\n• 잠시 후 다시 시도해보세요');
             } else if (err.code === 'ERR_NETWORK') {
                 setError('🔌 서버 연결 실패\n\n백엔드 서버(localhost:8080)에 연결할 수 없습니다.\n서버가 실행 중인지 확인해주세요.');
             } else if (err.response?.status === 401 || errorMessage.includes('oauth_failed') || errorMessage.includes('OAuth2')) {
