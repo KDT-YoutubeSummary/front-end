@@ -188,7 +188,12 @@ const SummaryArchive = ({
                             <img
                                 src={selectedArchive.thumbnail || 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image'}
                                 alt="썸네일"
-                                className="w-32 h-20 object-cover rounded-lg shadow-md flex-shrink-0"
+                                className="w-32 h-20 object-cover rounded-lg shadow-md flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => {
+                                    if (selectedArchive.original_url) {
+                                        window.open(selectedArchive.original_url, '_blank');
+                                    }
+                                }}
                                 onError={(e) => e.target.src = 'https://placehold.co/128x80/e2e8f0/64748b?text=No+Image'}
                             />
                             <div className="flex-1 min-w-0">
@@ -363,7 +368,13 @@ const SummaryArchive = ({
                                     <img
                                         src={item.thumbnail || 'https://placehold.co/320x180/e2e8f0/64748b?text=No+Image'}
                                         alt="썸네일"
-                                        className="w-full h-40 object-cover"
+                                        className="w-full h-40 object-cover hover:opacity-80 transition-opacity"
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // 카드 클릭 이벤트 방지
+                                            if (item.original_url) {
+                                                window.open(item.original_url, '_blank');
+                                            }
+                                        }}
                                         onError={(e) => e.target.src = 'https://placehold.co/320x180/e2e8f0/64748b?text=No+Image'}
                                     />
                                     <div className="p-4">
