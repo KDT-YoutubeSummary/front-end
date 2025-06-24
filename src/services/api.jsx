@@ -1,6 +1,9 @@
 // src/services/api.jsx
 import axios from 'axios'; // App.jsx에서 인터셉터가 설정된 전역 axios 인스턴스를 가져옵니다.
 
+// ↓↓↓ 이 한 줄을 추가해주세요! ↓↓↓
+axios.defaults.baseURL = '/'; // 모든 axios 요청의 기본 URL을 서버 루트로 설정합니다.
+
 // API 클라이언트 생성 부분을 삭제하거나,
 // api 변수를 전역 axios 인스턴스로 바로 사용합니다.
 // const api = axios.create({ // 이 부분을 주석 처리하거나 삭제합니다.
