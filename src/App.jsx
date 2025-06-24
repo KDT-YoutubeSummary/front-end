@@ -14,6 +14,7 @@ import MyPage from './pages/MyPage';
 import AuthPage from './pages/AuthPage.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import SummaryPage from "./pages/SummaryPage.jsx"; // SummaryPage 임포트 확인
+import LandingPage from './pages/LandingPage.jsx'; // 랜딩 페이지 임포트 추가
 import { MessageModal, ReauthModal } from './components/MyPageModals.jsx';
 import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
 import { ReminderPage } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트 수정
@@ -57,7 +58,7 @@ function AppContent() {
                 setShowAuthModal(false); // 모달 닫기
                 handleAppShowMessage('로그인 성공!');
                 // 요약 페이지로 이동
-                navigate('/', { replace: true });
+                navigate('/summary', { replace: true });
             }
         } catch (error) {
             // 서버 응답에 따른 구체적인 오류 메시지 처리
@@ -138,7 +139,7 @@ function AppContent() {
         // 메시지 표시
         handleAppShowMessage(message);
         
-        // 요약 홈페이지로 이동
+        // 랜딩 페이지로 이동
         navigate('/', { replace: true });
     };
 
@@ -154,7 +155,7 @@ function AppContent() {
 
     const handleCloseAuthModal = () => {
         setShowAuthModal(false);
-        // 로그인 모달을 닫을 때 홈으로 이동
+        // 로그인 모달을 닫을 때 랜딩 페이지로 이동 (이미 랜딩 페이지라면 이동하지 않음)
         if (location.pathname !== '/') {
             navigate('/', { replace: true });
         }
@@ -260,7 +261,7 @@ function AppContent() {
     }, [location.key, location.state, location.search, navigate]); // location.search 추가
 
     const menuItems = [
-        { id: 'summary', label: '영상 요약', path: '/', icon: FileText },
+        { id: 'summary', label: '영상 요약', path: '/summary', icon: FileText },
         { id: 'library', label: '요약 저장소', path: '/summary-archives', icon: Archive },
         { id: 'reminders', label: '리마인더', path: '/reminders', icon: Bell },
         { id: 'recommendation', label: '추천', path: '/recommendations', icon: Lightbulb },
@@ -269,13 +270,15 @@ function AppContent() {
 
     const getCurrentPageLabel = () => {
         if (location.pathname === '/login') return '로그인 / 회원가입';
+        if (location.pathname === '/') return 'YouSum';
         const currentItem = menuItems.find(item => item.path === location.pathname);
         return currentItem ? currentItem.label : 'YouSum';
     };
 
     return (
         <div className="flex min-h-screen w-full bg-gray-50 font-inter">
-            {/* Sidebar */}
+            {/* Sidebar - 랜딩 페이지에서는 숨김 */}
+            {location.pathname !== '/' && (
             <nav className="w-20 md:w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col">
                 <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
                     <Link to="/" className="flex items-center space-x-2 justify-center md:justify-start">
@@ -307,15 +310,17 @@ function AppContent() {
                     )}
                 </div>
             </nav>
+            )}
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col w-full">
-                {/* 기존 헤더 (페이지명 + 로그인된 유저 표시) */}
+                {/* 기존 헤더 (페이지명 + 로그인된 유저 표시) - 랜딩 페이지에서는 숨김 */}
+                {location.pathname !== '/' && (
                 <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             {/* 페이지별 아이콘 */}
-                            {location.pathname === '/' && (
+                            {location.pathname === '/summary' && (
                                 <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
                                     <FileText className="h-5 w-5 text-white" />
                                 </div>
@@ -345,7 +350,7 @@ function AppContent() {
                                 <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
                                 
                                 {/* 페이지별 설명과 기능 태그 */}
-                                {location.pathname === '/' && (
+                                {location.pathname === '/summary' && (
                                     <div className="flex items-end space-x-3">
                                         <span className="text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
                                         <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
@@ -404,11 +409,15 @@ function AppContent() {
                         </div>
                     </div>
                 </header>
+                )}
 
                 <main className="flex-1 overflow-y-scroll bg-gray-100">
                     <Routes>
+                        {/* 랜딩 페이지 */}
+                        <Route path="/" element={<LandingPage />} />
+                        
                         {/* ✅ SummaryPage 컴포넌트를 직접 라우팅하여 백엔드 통신 로직이 실행되도록 합니다. */}
-                        <Route path="/" element={
+                        <Route path="/summary" element={
                             <div>
                                 {console.log('SummaryPage 렌더링 시작')}
                                 <SummaryPage onShowAuthModal={handleShowAuthModal} isLoggedIn={isLoggedIn} />
