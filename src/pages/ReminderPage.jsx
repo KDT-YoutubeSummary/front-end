@@ -23,6 +23,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     const [showReminderEditModal, setShowReminderEditModal] = useState(false);
     const [editingReminder, setEditingReminder] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [expandedId, setExpandedId] = useState(null);
 
     // --- Search States ---
     const [searchTerm, setSearchTerm] = useState('');
@@ -138,15 +139,37 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
 
     // 리마인더 데이터 로드
     const fetchUserReminders = async () => {
-        if (!userId) return;
+        if (!userId) {
+            console.warn('⚠️ userId가 없어서 리마인더 데이터를 조회할 수 없습니다.');
+            return;
+        }
 
         try {
-            // setIsLoading(true); // 페이지 로드 시 로딩 모달 제거
+            setIsLoading(true); // 로딩 표시
+            console.log('🔍 리마인더 데이터 조회 시작 - userId:', userId);
+            console.log('🔍 현재 토큰 상태:', localStorage.getItem('accessToken') ? '존재함' : '없음');
+            
             const fetchedReminders = await reminderApi.getUserReminders(userId);
-            console.log('로드된 리마인더 데이터:', fetchedReminders);
+            console.log('✅ 로드된 리마인더 데이터:', fetchedReminders);
+            console.log('✅ 데이터 타입:', typeof fetchedReminders);
+            console.log('✅ 배열인가?', Array.isArray(fetchedReminders));
+            
+            // API 응답이 배열이 아닌 경우 처리
+            const remindersArray = Array.isArray(fetchedReminders) ? fetchedReminders 
+                                 : Array.isArray(fetchedReminders?.data) ? fetchedReminders.data 
+                                 : [];
+            
+            console.log('📋 처리된 리마인더 배열:', remindersArray);
+            console.log('📋 배열 길이:', remindersArray.length);
+            
+            // 첫 번째 리마인더의 구조 확인
+            if (remindersArray.length > 0) {
+                console.log('📋 첫 번째 리마인더 데이터:', remindersArray[0]);
+                console.log('📋 summaryArchiveId:', remindersArray[0].summaryArchiveId);
+            }
 
             // 최신순으로 정렬
-            const sortedReminders = fetchedReminders.sort((a, b) => 
+            const sortedReminders = remindersArray.sort((a, b) => 
                 new Date(a.nextNotificationDatetime) - new Date(b.nextNotificationDatetime)
             );
 
@@ -164,15 +187,12 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                     
                     try {
                         // summaryArchiveId를 사용해서 요약 저장소 정보 조회
-                        const libraryResponse = await fetch(`http://52.78.6.200/api/summary-archives/${reminder.summaryArchiveId}`, {
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                            }
-                        });
+                        console.log(`🔍 요약 저장소 조회 시작 - summaryArchiveId: ${reminder.summaryArchiveId}`);
+                        const libraryData = await reminderApi.getSummaryArchiveForReminder(reminder.summaryArchiveId);
+                        console.log(`📚 요약 저장소 응답:`, libraryData);
                         
-                        if (libraryResponse.ok) {
-                            const libraryData = await libraryResponse.json();
-                            if (libraryData.data) {
+                        if (libraryData && libraryData.data) {
+                            console.log(`📚 요약 저장소 data:`, libraryData.data);
                                 // 영상 제목 설정
                                 if (libraryData.data.video_title) {
                                     videoTitle = libraryData.data.video_title;
@@ -196,12 +216,23 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                                     const videoId = libraryData.data.original_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
                                     if (videoId) {
                                         videoMetadata.thumbnail = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
-                                    }
                                 }
                             }
                         }
                     } catch (error) {
-                        console.error(`요약 저장소 정보 조회 실패 (ID: ${reminder.summaryArchiveId}):`, error);
+                        console.error(`❌ 요약 저장소 정보 조회 실패 (ID: ${reminder.summaryArchiveId}):`, error);
+                        console.error('❌ 에러 상세 정보:', {
+                            status: error.response?.status,
+                            statusText: error.response?.statusText,
+                            data: error.response?.data,
+                            message: error.message,
+                            config: error.config?.url
+                        });
+                        
+                        // 401 에러인 경우 특별히 처리
+                        if (error.response?.status === 401) {
+                            console.error('❌ 인증 토큰이 만료되었거나 유효하지 않습니다.');
+                        }
                     }
 
                     return {
@@ -222,7 +253,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
             setMessageModalContent(`리마인더 데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
             setShowMessageModal(true);
         } finally {
-            // setIsLoading(false); // 페이지 로드 시 로딩 모달 제거
+            setIsLoading(false); // 로딩 완료
         }
     };
 
@@ -276,102 +307,121 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
     };
 
     return (
-        <div id="reminder-page" className="max-w-6xl mx-auto p-6 space-y-8">
-            {isLoading && (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-auto text-center animate-fade-in-up">
-                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500 mx-auto mb-6"></div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">처리 중입니다</h3>
-                        <p className="text-gray-600 text-base">잠시만 기다려주세요...</p>
-                    </div>
-                </div>
-            )}
-
-            {reminders.length === 0 && !isLoading ? (
+        <div id="reminder-page" className="max-w-6xl mx-auto px-8 py-6 space-y-8">
+            {/* 로딩 중 표시 */}
+                {isLoading && (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Bell className="h-10 w-10 text-blue-600" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-4">첫 번째 리마인더를 설정해보세요!</h3>
-                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
-                            요약 저장소의 요약본에 리마인더를 설정하여<br />
-                            <span className="font-semibold text-blue-600">중요한 내용을 놓치지 않도록</span> 하세요.
-                        </p>
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+                        <p className="text-gray-600 font-medium text-base">리마인더를 불러오고 있습니다...</p>
+                        <p className="text-gray-500 text-sm mt-2">잠시만 기다려주세요</p>
+                    </div>
+                    </div>
+                )}
 
-                        <div className="flex flex-col gap-4 justify-center items-center">
-                            <button
+            {/* 리마인더가 없을 때 */}
+            {!isLoading && reminders.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                        <div className="text-center py-12">
+                            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Bell className="h-10 w-10 text-blue-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">첫 번째 리마인더를 설정해보세요!</h3>
+                            <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
+                                요약 저장소의 요약본에 리마인더를 설정하여<br />
+                                <span className="font-semibold text-blue-600">중요한 내용을 놓치지 않도록</span> 하세요.
+                            </p>
+
+                            <div className="flex flex-col gap-4 justify-center items-center">
+                                <button
                                 onClick={() => window.location.href = '/library'}
-                                className="bg-blue-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-blue-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-base"
-                            >
-                                <Plus className="h-5 w-5" />
-                                <span>요약 저장소로 이동</span>
-                            </button>
-                            <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                <Calendar className="h-4 w-4" />
-                                <span>리마인더 설정</span>
+                                    className="bg-blue-500 text-white py-3 px-8 rounded-lg font-bold hover:bg-blue-600 transition-colors transform hover:scale-105 shadow-md flex items-center space-x-2 text-base"
+                                >
+                                    <Plus className="h-5 w-5" />
+                                    <span>요약 저장소로 이동</span>
+                                </button>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>리마인더 설정</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            ) : null}
+                ) : null}
 
-            {reminders.length > 0 && (
-                <div className="space-y-6">
-                    {/* Search and Filter Inputs */}
+            {/* 리마인더 목록 표시 */}
+            {!isLoading && reminders.length > 0 && (
+                    <div className="space-y-6">
+                    {/* 검색 및 필터링 (추천페이지와 동일한 스타일) */}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex gap-4">
-                        <div className="flex-1 relative">
+                                <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"/>
-                            <input
-                                type="text"
-                                placeholder="요약 제목으로 검색..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 text-base"
-                            />
-                        </div>
-                        <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        placeholder="요약 제목으로 검색..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 text-base"
+                                    />
+                                </div>
+                                <div className="flex-1 relative">
                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"/>
-                            <input
-                                type="text"
-                                placeholder="태그로 필터링..."
-                                value={filterTag}
-                                onChange={(e) => setFilterTag(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-700 text-base"
-                            />
+                                    <input
+                                        type="text"
+                                        placeholder="태그로 필터링..."
+                                        value={filterTag}
+                                        onChange={(e) => setFilterTag(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 text-base"
+                                    />
                         </div>
                     </div>
 
-                    {/* Loading or No Results Message */}
-                    {filteredReminders.length === 0 && (searchTerm || filterTag) ? (
-                        <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
-                            <p className="text-lg font-medium">검색 결과가 없습니다.</p>
-                            <p className="text-sm">다른 검색어나 태그를 시도해보세요.</p>
+                    {/* 리마인더 개수 정보 (추천페이지와 동일한 스타일) */}
+                    {filteredReminders.length > 0 && (
+                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+                            <div className="flex justify-between items-center text-sm text-gray-600">
+                                <span>총 {filteredReminders.length}개의 활성 리마인더</span>
+                                <div className="flex items-center space-x-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>자동 알림</span>
+                                </div>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                            {filteredReminders.map((reminder) => (
+                    )}
+
+                    {/* 검색 결과 없음 */}
+                        {filteredReminders.length === 0 && (searchTerm || filterTag) ? (
+                            <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                                <p className="text-lg font-medium">검색 결과가 없습니다.</p>
+                                <p className="text-sm">다른 검색어나 태그를 시도해보세요.</p>
+                            </div>
+                        ) : (
+                        /* 활성 리마인더 목록 */
+                        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+                                    {filteredReminders.map((reminder) => (
                                 <Reminder
                                     key={reminder.id}
                                     reminder={reminder}
                                     onDelete={handleDeleteReminder}
                                     onEdit={handleEditReminder}
+                                    expandedId={expandedId}
+                                    onToggleExpand={setExpandedId}
                                 />
                             ))}
-                        </div>
-                    )}
-                </div>
-            )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
-            {/* Reminder Edit Modal */}
-            {showReminderEditModal && editingReminder && (
-                <ReminderEditModal
-                    reminder={editingReminder}
-                    onClose={() => setShowReminderEditModal(false)}
-                    onSave={handleUpdateReminder}
-                    reminderIntervals={reminderIntervalsOptions}
-                />
-            )}
+            {/* 리마인더 수정 모달 */}
+                {showReminderEditModal && editingReminder && (
+                            <ReminderEditModal
+                                reminder={editingReminder}
+                                onClose={() => setShowReminderEditModal(false)}
+                                onSave={handleUpdateReminder}
+                                reminderIntervals={reminderIntervalsOptions}
+                            />
+                )}
         </div>
     );
 };

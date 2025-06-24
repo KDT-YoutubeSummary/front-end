@@ -33,6 +33,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  -ms-overflow-style: none; /* Internet Explorer */
 }
 
 h1 {
@@ -67,29 +68,39 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* 스크롤바 스타일 개선 */
+/* 스크롤바 완전히 숨기기 */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 0px;
+  height: 0px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: transparent;
 }
 
-/* Firefox 스크롤바 스타일 */
+/* Firefox 스크롤바 숨기기 */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 #f1f1f1;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+/* 스크롤 기능은 유지하되 스크롤바만 숨기기 */
+.scroll-hidden {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
 }
 
 /* 불필요한 스크롤바 숨기기 */
@@ -120,12 +131,6 @@ html, body, #root {
     padding: 0.5em 1em;
   }
   
-  /* 모바일에서 스크롤바 숨기기 */
-  ::-webkit-scrollbar {
-    width: 0px;
-    background: transparent;
-  }
-  
   /* 모바일에서 터치 스크롤 개선 */
   * {
     -webkit-overflow-scrolling: touch;
@@ -137,4 +142,9 @@ html, body, #root {
   body {
     font-size: 15px;
   }
+}
+
+/* 모든 요소에서 스크롤바 숨기기 */
+*::-webkit-scrollbar {
+  display: none;
 }

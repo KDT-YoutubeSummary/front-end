@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Trash2, Edit, Clock, Repeat, User, Eye, Play } from 'lucide-react';
+import { Trash2, Edit, Clock, Repeat, User, Eye, Play, Sparkles, Hash } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 /**
  * Reminder Component
@@ -8,18 +10,20 @@ import { Trash2, Edit, Clock, Repeat, User, Eye, Play } from 'lucide-react';
  * @param {object} props.reminder - The reminder object data.
  * @param {function} props.onDelete - Function to delete a reminder.
  * @param {function} props.onEdit - Function to edit a reminder.
+ * @param {string} props.expandedId - Currently expanded reminder ID.
+ * @param {function} props.onToggleExpand - Function to handle expand/collapse.
  */
-const Reminder = ({ reminder, onDelete, onEdit }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const Reminder = ({ reminder, onDelete, onEdit, expandedId, onToggleExpand }) => {
+    const isExpanded = expandedId === reminder.id;
 
     const toggleExpand = () => {
-        setIsExpanded(!isExpanded);
+        onToggleExpand(isExpanded ? null : reminder.id);
     };
 
     return (
         <div className="border-b border-gray-200 last:border-b-0 py-6">
             {/* Header with Video Info */}
-            <div className="flex items-start space-x-4">
+            <div className="flex items-start space-x-6 px-6">
                 {/* Thumbnail */}
                 <div className="flex-shrink-0">
                     <div className="w-24 h-16 bg-gray-200 rounded-lg overflow-hidden relative">
@@ -43,7 +47,7 @@ const Reminder = ({ reminder, onDelete, onEdit }) => {
                 {/* Video Info */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 pr-4">
                             <h3 className="text-lg font-semibold text-gray-800 hover:text-red-600 transition-colors cursor-pointer text-left" onClick={toggleExpand}>
                                 {reminder.summaryTitle}
                             </h3>
@@ -64,21 +68,21 @@ const Reminder = ({ reminder, onDelete, onEdit }) => {
                                 )}
                             </div>
 
-                            {/* Reminder Info */}
-                            <div className="flex items-center space-x-4 mt-2 text-sm">
-                                <div className="flex items-center space-x-1 text-blue-600">
+                            {/* Reminder Info as Tags */}
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex items-center space-x-1">
                                     <Clock className="h-3 w-3" />
                                     <span>{reminder.reminderTime}</span>
-                                </div>
-                                <div className="flex items-center space-x-1 text-purple-600">
+                                </span>
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 flex items-center space-x-1">
                                     <Repeat className="h-3 w-3" />
                                     <span>{reminder.reminderInterval}</span>
-                                </div>
+                                </span>
                             </div>
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex space-x-2 ml-4">
+                        <div className="flex space-x-3 ml-6">
                             <button
                                 onClick={() => onEdit(reminder)}
                                 className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors transform hover:scale-110"
@@ -112,47 +116,67 @@ const Reminder = ({ reminder, onDelete, onEdit }) => {
                 </div>
             </div>
 
-            {/* Expanded Reminder Details */}
-            {isExpanded && (
-                <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Summary Content */}
-                        <div>
-                            <h5 className="font-semibold text-gray-800 mb-3 flex items-center">
-                                <Play className="h-4 w-4 mr-2 text-red-500" />
-                                요약 내용
-                            </h5>
-                            <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed bg-white p-4 rounded-lg border border-gray-100">
-                                {reminder.summaryContent}
-                            </div>
-                        </div>
-
-                        {/* Reminder Details */}
-                        <div className="space-y-4">
-                            <div>
-                                <h5 className="font-semibold text-gray-800 mb-3 flex items-center">
-                                    <Clock className="h-4 w-4 mr-2 text-blue-500" />
-                                    리마인더 설정
-                                </h5>
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                                        <span className="text-sm font-medium text-blue-700">알림 시간</span>
-                                        <span className="text-sm text-blue-800 font-semibold">{reminder.reminderTime}</span>
+            {/* Expanded Reminder Details - 애니메이션과 함께 */}
+            <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+                }`}
+            >
+                <div className="mt-6">
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="p-6 space-y-6">
+                            {/* 1. 리마인더 설정 섹션 */}
+                            <div className="border-l-4 border-green-400 pl-4">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                        <Clock className="w-4 h-4 text-green-600" />
                                     </div>
-                                    <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                                        <span className="text-sm font-medium text-purple-700">반복 주기</span>
-                                        <span className="text-sm text-purple-800 font-semibold">{reminder.reminderInterval}</span>
+                                    <h2 className="text-lg font-bold text-green-900">리마인더 설정</h2>
+                                </div>
+
+                                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                                            <span className="text-sm font-medium text-green-700">알림 시간</span>
+                                            <span className="text-sm text-green-800 font-semibold">{reminder.reminderTime}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                                            <span className="text-sm font-medium text-green-700">반복 주기</span>
+                                            <span className="text-sm text-green-800 font-semibold">{reminder.reminderInterval}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div>
-                                <h5 className="font-semibold text-gray-800 mb-3 flex items-center">
-                                    <Edit className="h-4 w-4 mr-2 text-green-500" />
-                                    메모
-                                </h5>
-                                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed">
+                            {/* 2. 요약 내용 */}
+                            <div className="border-l-4 border-blue-400 pl-4">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <h2 className="text-lg font-bold text-blue-900">요약 내용</h2>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 max-h-96 overflow-y-auto">
+                                    <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {reminder.summaryContent || '요약 내용을 불러올 수 없습니다.'}
+                                        </ReactMarkdown>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 3. 메모 섹션 */}
+                            <div className="border-l-4 border-purple-400 pl-4">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <Edit className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <h2 className="text-lg font-bold text-purple-900">메모</h2>
+                                </div>
+
+                                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                                    <div className="text-gray-700 leading-relaxed prose prose-lg max-w-none">
                                         {reminder.reminderNotes || '메모 없음'}
                                     </div>
                                 </div>
@@ -160,7 +184,7 @@ const Reminder = ({ reminder, onDelete, onEdit }) => {
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };

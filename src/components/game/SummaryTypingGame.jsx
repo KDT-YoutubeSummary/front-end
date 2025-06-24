@@ -87,7 +87,7 @@ const KEYWORD_LEVELS = {
 
 const TIME_LIMITS = [30, 25, 20, 15, 10, 7, 5];
 
-export default function SummaryTypingGame({ onComplete, summaryComplete = false }) {
+export default function SummaryTypingGame({ onComplete, summaryComplete = false, onBack, onSwitchGame }) {
   const [gameState, setGameState] = useState('playing'); // 'playing', 'gameOver', 'completed', 'summaryComplete'
   const [currentKeyword, setCurrentKeyword] = useState('');
   const [userInput, setUserInput] = useState('');
@@ -424,14 +424,14 @@ export default function SummaryTypingGame({ onComplete, summaryComplete = false 
               <div className="text-3xl font-bold text-orange-500 animate-bounce">{countdown}</div>
               <p className="text-sm text-gray-600">초 후 요약 확인하기...</p>
             </div>
-          ) : (
-            <button
-              onClick={() => onComplete && onComplete()}
-              className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-base font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              지금 바로 확인해보세요! 🚀
-            </button>
-          )}
+                      ) : (
+              <button
+                onClick={() => onComplete && onComplete()}
+                className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-base font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+              >
+                지금 바로 확인해보세요! 🚀
+              </button>
+            )}
         </div>
       </div>
     );
@@ -699,14 +699,23 @@ export default function SummaryTypingGame({ onComplete, summaryComplete = false 
         </div>
       </div>
 
-      {/* 진행 바 */}
-      <div className="w-full mt-4">
-        <div className="bg-gray-200 rounded-full h-2">
-          <div 
-            className={`bg-gradient-to-r ${levelInfo.progressColor} h-2 rounded-full transition-all duration-300`}
-            style={{ width: `${(timeLeft / keywordTimeLimit) * 100}%` }}
-          ></div>
-        </div>
+
+
+      {/* 뒤로가기 및 공룡게임하기 버튼 */}
+      <div className="flex items-center justify-between mt-6">
+        <button
+          onClick={() => onBack && onBack()}
+          className="bg-gray-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition-colors"
+        >
+          뒤로가기
+        </button>
+        <button
+          onClick={() => onSwitchGame('dino')}
+          className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600 transition-colors flex items-center space-x-2"
+        >
+          <span>🦖</span>
+          <span>공룡 게임하기</span>
+        </button>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, ChevronRight, Sparkles, TrendingUp, Archive, Zap, Users, Award, CheckCircle, Clock, Bell, FileText, Lightbulb } from 'lucide-react';
+import { Play, ChevronRight, Sparkles, TrendingUp, Archive, Zap, Users, Award, CheckCircle, Clock, Bell, FileText, Lightbulb, BookOpen, Brain, Target, Star } from 'lucide-react';
 
 export default function LandingPage() {
     const navigate = useNavigate();
@@ -12,7 +12,7 @@ export default function LandingPage() {
         // 애니메이션 시간 후 페이지 이동
         setTimeout(() => {
             navigate('/summary');
-        }, 800);
+        }, 1200);
     };
 
     return (
@@ -35,7 +35,7 @@ export default function LandingPage() {
                 </div>
                 <div className="hidden md:flex items-center space-x-8">
                     <a href="#features" className="text-gray-600 hover:text-red-500 transition-colors font-medium">기능</a>
-                    <a href="#benefits" className="text-gray-600 hover:text-red-500 transition-colors font-medium">장점</a>
+                    <a href="#target-users" className="text-gray-600 hover:text-red-500 transition-colors font-medium">사용자</a>
                     <a href="#stats" className="text-gray-600 hover:text-red-500 transition-colors font-medium">통계</a>
                     <button 
                         onClick={handleStart}
@@ -47,16 +47,16 @@ export default function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
+            <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
                 {/* Main Logo and Title */}
                 <div 
-                    className={`flex flex-col items-center space-y-8 transition-all duration-800 ease-in-out ${
+                    className={`flex flex-col items-center transition-all duration-1200 ease-in-out ${
                         isStarting 
-                            ? 'transform -translate-x-[45vw] -translate-y-[40vh] scale-50' 
-                            : 'transform translate-x-0 translate-y-0 scale-100'
+                            ? 'opacity-0 transform scale-75 -translate-y-32' 
+                            : 'opacity-100 transform scale-100 translate-y-0'
                     }`}
                 >
-                    <div className="relative">
+                    <div className="relative mb-10">
                         {/* Main Logo */}
                         <div className="w-32 h-32 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-full flex items-center justify-center shadow-2xl hover:shadow-red-300 transition-all duration-500 transform hover:scale-105">
                             <Play className="h-16 w-16 text-white fill-current" />
@@ -67,16 +67,22 @@ export default function LandingPage() {
                         <div className="absolute -inset-2 w-36 h-36 border-2 border-red-100 rounded-full animate-pulse"></div>
                     </div>
                     
-                    {/* Title and Subtitle */}
-                    <div className="space-y-4">
+                    {/* Title and Subtitle - 간격 확대 */}
+                    <div className="space-y-8">
                         <h1 className="text-7xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-red-600 to-gray-900 tracking-tight">
                             You<span className="text-red-500">Sum</span>
                         </h1>
-                        <p className="text-2xl md:text-3xl text-gray-600 font-light max-w-3xl mx-auto leading-relaxed">
-                            AI가 만드는 <span className="text-red-500 font-semibold">스마트한 학습</span>,<br />
-                            유튜브 영상을 한 번에 요약하세요
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-3 mt-6">
+                        
+                        <div className="space-y-6">
+                            <p className="text-2xl md:text-3xl text-gray-600 font-light max-w-3xl mx-auto leading-relaxed">
+                                AI가 만드는 <span className="text-red-500 font-semibold">스마트한 학습</span>,<br />
+                                유튜브 영상을 한 번에 요약하세요
+                            </p>
+                            
+
+                        </div>
+                        
+                        <div className="flex flex-wrap justify-center gap-3 mt-10">
                             <span className="inline-flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-full text-sm font-medium">
                                 <Sparkles className="w-4 h-4 mr-2" />
                                 AI 요약
@@ -99,7 +105,7 @@ export default function LandingPage() {
 
                 {/* CTA Button */}
                 <div 
-                    className={`mt-12 transition-all duration-800 ease-in-out ${
+                    className={`mt-16 transition-all duration-1200 delay-200 ease-in-out ${
                         isStarting ? 'opacity-0 transform translate-y-8' : 'opacity-100 transform translate-y-0'
                     }`}
                 >
@@ -112,14 +118,14 @@ export default function LandingPage() {
                         <span>지금 시작하기</span>
                         <ChevronRight className="h-6 w-6 group-hover:translate-x-2 transition-transform duration-300" />
                     </button>
-                    <p className="text-gray-500 text-sm mt-4">무료로 시작하세요 • 로그인 필요</p>
+                    <p className="text-gray-500 text-sm mt-6">무료로 시작하세요 • 로그인 필요</p>
                 </div>
             </section>
 
             {/* Features Section */}
             <section 
                 id="features"
-                className={`relative z-10 py-20 px-6 transition-all duration-800 delay-100 ease-in-out ${
+                className={`relative z-10 py-20 px-6 mt-20 transition-all duration-800 delay-100 ease-in-out ${
                     isStarting ? 'opacity-0 transform translate-y-8' : 'opacity-100 transform translate-y-0'
                 }`}
             >
@@ -229,6 +235,137 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* Target Users Section - 타겟 사용자층 섹션 추가 */}
+            <section 
+                id="target-users"
+                className={`relative z-10 py-20 px-6 bg-gradient-to-r from-blue-50 via-white to-purple-50 transition-all duration-800 delay-200 ease-in-out ${
+                    isStarting ? 'opacity-0 transform translate-y-8' : 'opacity-100 transform translate-y-0'
+                }`}
+            >
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-20">
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                            <span className="text-blue-500">누구를 위한</span> 서비스일까요?
+                        </h2>
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                            능동적 학습자를 위한 AI 기반 유튜브 영상 요약 및 학습 지원 플랫폼
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {/* 대학생 및 대학원생 */}
+                        <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <BookOpen className="h-8 w-8 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">대학생 및 대학원생</h3>
+                            <p className="text-gray-600 text-center leading-relaxed mb-6">
+                                온라인 강의와 학술 영상이 많아<br />
+                                <span className="text-blue-600 font-semibold">효율적인 학습 방법</span>이 필요한 분들
+                            </p>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>온라인 강의 내용 정리</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>연구 자료 효율적 분석</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>시험 준비 시간 단축</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 직장인 */}
+                        <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <Target className="h-8 w-8 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">직장인</h3>
+                            <p className="text-gray-600 text-center leading-relaxed mb-6">
+                                업무 관련 학습과 자기계발을 위해<br />
+                                <span className="text-green-600 font-semibold">시간 효율성</span>을 중시하는 분들
+                            </p>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>업무 스킬 향상 영상 요약</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>트렌드 정보 빠른 파악</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>점심시간 자기계발</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 평생학습자 */}
+                        <div className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                                <Brain className="h-8 w-8 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">평생학습자</h3>
+                            <p className="text-gray-600 text-center leading-relaxed mb-6">
+                                새로운 분야에 대한 호기심이 많고<br />
+                                <span className="text-purple-600 font-semibold">체계적인 학습 관리</span>를 원하는 분들
+                            </p>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>취미 분야 깊이있는 학습</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>학습 진도 체계적 관리</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-sm text-gray-600">
+                                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                    <span>개인 맞춤형 학습 경험</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 추가 특징 */}
+                    <div className="mt-16 text-center">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg max-w-4xl mx-auto">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                                <span className="text-red-500">능동적 학습자</span>를 위한 특별한 경험
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="flex flex-col items-center">
+                                    <Star className="h-8 w-8 text-yellow-500 mb-3" />
+                                    <p className="text-sm text-gray-600 text-center">
+                                        단순 시청이 아닌<br />
+                                        <span className="font-semibold">능동적 학습 참여</span>
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <Brain className="h-8 w-8 text-blue-500 mb-3" />
+                                    <p className="text-sm text-gray-600 text-center">
+                                        AI 기반<br />
+                                        <span className="font-semibold">개인화된 학습 지원</span>
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <Target className="h-8 w-8 text-green-500 mb-3" />
+                                    <p className="text-sm text-gray-600 text-center">
+                                        체계적인<br />
+                                        <span className="font-semibold">학습 목표 달성</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Stats Section */}
             <section 
                 id="stats"
@@ -316,13 +453,21 @@ export default function LandingPage() {
                 </div>
             </footer>
 
-            {/* Loading Overlay */}
+            {/* Loading Overlay - 새로운 애니메이션 */}
             {isStarting && (
-                <div className="fixed inset-0 bg-gradient-to-br from-red-500/20 via-white/90 to-blue-500/20 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-sm w-full mx-4 text-center">
-                        <div className="w-20 h-20 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-6"></div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">YouSum 시작하는 중...</h3>
-                        <p className="text-gray-600">AI가 당신의 학습을 준비하고 있어요</p>
+                <div className="fixed inset-0 bg-gradient-to-br from-red-500/20 via-white/95 to-blue-500/20 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-sm w-full mx-4 text-center transform scale-110 animate-pulse">
+                        <div className="relative mb-8">
+                            <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto">
+                                <Play className="h-10 w-10 text-white fill-current" />
+                            </div>
+                            <div className="absolute inset-0 w-20 h-20 border-4 border-red-200 rounded-full animate-ping mx-auto"></div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">YouSum 시작하는 중...</h3>
+                        <p className="text-gray-600 mb-4">AI가 당신의 학습을 준비하고 있어요</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full animate-pulse" style={{width: '70%'}}></div>
+                        </div>
                     </div>
                 </div>
             )}

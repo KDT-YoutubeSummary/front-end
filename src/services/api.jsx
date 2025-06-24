@@ -14,7 +14,7 @@ import axios from 'axios'; // App.jsx에서 인터셉터가 설정된 전역 axi
 // 필요하다면 baseURL을 설정할 수 있지만, 인터셉터는 전역에 이미 설정되어 있습니다.
 // 모든 API 호출이 이 'axios' 인스턴스를 사용하도록 합니다.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // 인증 토큰 설정 함수는 그대로 유지하되, 이 함수가 전역 'axios'의 기본 헤더를 설정하도록 합니다.
 export const setAuthToken = (token) => {
@@ -224,6 +224,17 @@ export const reminderApi = {
       return true;
     } catch (error) {
       console.error(`리마인더(ID: ${reminderId}) 삭제 실패:`, error);
+      throw error;
+    }
+  },
+
+  // 요약 저장소 정보 조회 (리마인더에서 사용)
+  getSummaryArchiveForReminder: async (summaryArchiveId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/summary-archives/${summaryArchiveId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`요약 저장소(ID: ${summaryArchiveId}) 조회 실패:`, error);
       throw error;
     }
   }
