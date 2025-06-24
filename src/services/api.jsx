@@ -14,7 +14,7 @@ import axios from 'axios'; // App.jsx에서 인터셉터가 설정된 전역 axi
 // 필요하다면 baseURL을 설정할 수 있지만, 인터셉터는 전역에 이미 설정되어 있습니다.
 // 모든 API 호출이 이 'axios' 인스턴스를 사용하도록 합니다.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200';
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200';
 
 // 인증 토큰 설정 함수는 그대로 유지하되, 이 함수가 전역 'axios'의 기본 헤더를 설정하도록 합니다.
 export const setAuthToken = (token) => {
@@ -30,7 +30,7 @@ export const youtubeApi = {
   // 영상 메타데이터 저장
   saveMetadata: async (url) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/youtube/save`, { url }); // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/youtube/save`, { url }); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('영상 메타데이터 저장 실패:', error);
@@ -41,7 +41,7 @@ export const youtubeApi = {
   // 영상 메타데이터 조회
   getMetadata: async (url) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/youtube/title`, { params: { url } }); // 'api' 대신 'axios' 사용
+      const response = await axios.get(`/api/youtube/title`, { params: { url } }); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('영상 메타데이터 조회 실패:', error);
@@ -56,7 +56,7 @@ export const youtubeApi = {
         originalUrl,
         userPrompt,
         summaryType,
-        endpoint: `${API_BASE_URL}/api/youtube/upload`
+        endpoint: `/api/youtube/upload`
       });
 
       const requestData = {
@@ -65,7 +65,7 @@ export const youtubeApi = {
         summaryType
       };
 
-      const response = await axios.post(`${API_BASE_URL}/api/youtube/upload`, requestData, {
+      const response = await axios.post(`/api/youtube/upload`, requestData, {
         timeout: 300000, // 5분 타임아웃
         headers: {
           'Content-Type': 'application/json'
@@ -108,7 +108,7 @@ export const authApi = {
   login: async (userName, password) => { // ✅ 수정: email -> userName으로 변경 (App.jsx와 일관성)
     try {
       // ✅ 수정: 'email' 대신 'userName' 사용
-      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { userName, password }); // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/auth/login`, { userName, password }); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('로그인 실패:', error);
@@ -119,7 +119,7 @@ export const authApi = {
   // 회원가입
   register: async (userName, email, password) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, { userName, email, password }); // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/auth/register`, { userName, email, password }); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('회원가입 실패:', error);
@@ -133,7 +133,7 @@ export const myPageApi = {
   // 마이페이지 정보 조회
   getMyPageInfo: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/mypage`); // 'api' 대신 'axios' 사용
+      const response = await axios.get(`/api/mypage`); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('마이페이지 정보 조회 실패:', error);
@@ -147,7 +147,7 @@ export const quizApi = {
   // 퀴즈 생성
   generateQuiz: async (summaryId, count, difficulty) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/quizzes/generate`, { // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/quizzes/generate`, { // 'api' 대신 'axios' 사용
         summaryId,
         count,
         difficulty
@@ -162,7 +162,7 @@ export const quizApi = {
   // 퀴즈 제출
   submitQuiz: async (quizId, answers) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/quizzes/${quizId}/submit`, { answers }); // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/quizzes/${quizId}/submit`, { answers }); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error(`퀴즈(ID: ${quizId}) 제출 실패:`, error);
@@ -176,7 +176,7 @@ export const reminderApi = {
   // 리마인더 생성
   createReminder: async (reminderData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/reminders`, reminderData); // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/reminders`, reminderData); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('리마인더 생성 실패:', error);
@@ -187,7 +187,7 @@ export const reminderApi = {
   // 리마인더 상세 조회
   getReminder: async (reminderId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/reminders/${reminderId}`); // 'api' 대신 'axios' 사용
+      const response = await axios.get(`/api/reminders/${reminderId}`); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error(`리마인더(ID: ${reminderId}) 조회 실패:`, error);
@@ -198,7 +198,7 @@ export const reminderApi = {
   // 사용자의 모든 리마인더 조회
   getUserReminders: async (userId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/reminders/user/${userId}`); // 'api' 대신 'axios' 사용
+      const response = await axios.get(`/api/reminders/user/${userId}`); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error(`사용자(ID: ${userId})의 리마인더 목록 조회 실패:`, error);
@@ -209,7 +209,7 @@ export const reminderApi = {
   // 리마인더 수정
   updateReminder: async (reminderId, reminderData) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/reminders/${reminderId}`, reminderData); // 'api' 대신 'axios' 사용
+      const response = await axios.put(`/api/reminders/${reminderId}`, reminderData); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error(`리마인더(ID: ${reminderId}) 수정 실패:`, error);
@@ -220,7 +220,7 @@ export const reminderApi = {
   // 리마인더 삭제
   deleteReminder: async (reminderId) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/reminders/${reminderId}`); // 'api' 대신 'axios' 사용
+      await axios.delete(`/api/reminders/${reminderId}`); // 'api' 대신 'axios' 사용
       return true;
     } catch (error) {
       console.error(`리마인더(ID: ${reminderId}) 삭제 실패:`, error);
@@ -234,7 +234,7 @@ export const recommendationApi = {
   // 추천 생성
   createRecommendation: async (recommendationData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/recommendations`, recommendationData); // 'api' 대신 'axios' 사용
+      const response = await axios.post(`/api/recommendations`, recommendationData); // 'api' 대신 'axios' 사용
       return response.data;
     } catch (error) {
       console.error('추천 생성 실패:', error);
@@ -246,10 +246,10 @@ export const recommendationApi = {
   getUserRecommendations: async (userId) => {
     try {
       console.log('🔍 추천 목록 조회 요청 - userId:', userId);
-      console.log('🔍 요청 URL:', `${API_BASE_URL}/api/recommendations/${userId}`);
+      console.log('🔍 요청 URL:', `/api/recommendations/${userId}`);
       
       // Entity 형태의 일반 엔드포인트 사용 (메타데이터 포함)
-      const response = await axios.get(`${API_BASE_URL}/api/recommendations/${userId}`);
+      const response = await axios.get(`/api/recommendations/${userId}`);
       console.log('🔍 추천 목록 응답 상태:', response.status);
       console.log('🔍 추천 목록 응답 데이터:', response.data);
       console.log('🔍 응답 데이터 타입:', typeof response.data);
@@ -288,7 +288,7 @@ export const recommendationApi = {
   // 추천 삭제
   deleteRecommendation: async (recommendationId) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/recommendations/${recommendationId}`); // 'api' 대신 'axios' 사용
+      await axios.delete(`/api/recommendations/${recommendationId}`); // 'api' 대신 'axios' 사용
       return true;
     } catch (error) {
       console.error(`추천(ID: ${recommendationId}) 삭제 실패:`, error);
@@ -322,7 +322,7 @@ export const recommendationApi = {
       console.log('🔍 요청 헤더:', headers);
       
       // axios 요청 (인터셉터가 자동으로 Authorization 헤더를 추가하므로 중복 방지)
-      const response = await axios.post(`${API_BASE_URL}/api/recommendations/ai/${archiveId}`, {}, {
+      const response = await axios.post(`/api/recommendations/ai/${archiveId}`, {}, {
         // 타임아웃 설정 (5분)
         timeout: 300000,
         // 리디렉션을 따르지 않도록 설정
@@ -419,7 +419,7 @@ export const summaryArchiveApi = {
   // 요약 저장소 등록
   saveArchive: async (archiveData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/summary-archives`, archiveData);
+      const response = await axios.post(`/api/summary-archives`, archiveData);
       return response.data;
     } catch (error) {
       console.error('요약 저장소 등록 실패:', error);
@@ -431,13 +431,13 @@ export const summaryArchiveApi = {
   getArchives: async () => {
     try {
       console.log('🚀 요약 저장소 전체 조회 API 시작');
-      console.log('🔗 요청 URL:', `${API_BASE_URL}/api/summary-archives`);
+      console.log('🔗 요청 URL:', `/api/summary-archives`);
       
       // 인증 토큰 확인
       const token = localStorage.getItem('accessToken');
       console.log('🔐 토큰 상태:', token ? `존재함 (${token.substring(0, 20)}...)` : '없음');
       
-      const response = await axios.get(`${API_BASE_URL}/api/summary-archives`, {
+      const response = await axios.get(`/api/summary-archives`, {
         timeout: 10000, // 10초 타임아웃
         headers: {
           'Content-Type': 'application/json'
@@ -477,7 +477,7 @@ export const summaryArchiveApi = {
   // 요약 저장소 상세 조회
   getArchiveDetail: async (archiveId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/summary-archives/${archiveId}`);
+      const response = await axios.get(`/api/summary-archives/${archiveId}`);
       return response.data;
     } catch (error) {
       console.error(`요약 저장소(ID: ${archiveId}) 상세 조회 실패:`, error);
@@ -488,7 +488,7 @@ export const summaryArchiveApi = {
   // 요약 저장소 삭제
   deleteArchive: async (archiveId) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/summary-archives/${archiveId}`);
+      await axios.delete(`/api/summary-archives/${archiveId}`);
       return true;
     } catch (error) {
       console.error(`요약 저장소(ID: ${archiveId}) 삭제 실패:`, error);
@@ -503,7 +503,7 @@ export const summaryArchiveApi = {
       if (title) params.append('title', title);
       if (tags) params.append('tags', tags);
       
-      const response = await axios.get(`${API_BASE_URL}/api/summary-archives/search?${params.toString()}`);
+      const response = await axios.get(`/api/summary-archives/search?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error('요약 저장소 검색 실패:', error);
@@ -514,7 +514,7 @@ export const summaryArchiveApi = {
   // 태그 통계 조회
   getTagStatistics: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/summary-archives/stat/tags`);
+      const response = await axios.get(`/api/summary-archives/stat/tags`);
       return response.data;
     } catch (error) {
       console.error('태그 통계 조회 실패:', error);
@@ -540,7 +540,7 @@ export const summaryArchiveApi = {
       
       console.log('🔍 요청 본문:', requestBody);
       
-      const response = await axios.patch(`${API_BASE_URL}/api/summary-archives/notes`, requestBody);
+      const response = await axios.patch(`/api/summary-archives/notes`, requestBody);
       
       console.log('✅ 메모 업데이트 성공:', response.data);
       return response.data;
