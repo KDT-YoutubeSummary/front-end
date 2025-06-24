@@ -46,7 +46,7 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
     const handleLoginSubmit = async (userName, password) => {
         try {
             // 인증 API 사용
-            const response = await axios.post('${BASE_URL}/api/auth/login',  { userName: userName, password: password });
+            const response = await axios.post('/api/auth/login',  { userName: userName, password: password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
                 localStorage.setItem('accessToken', accessToken);
@@ -91,7 +91,7 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
     const handleSignupSubmit = async (userName, password, email) => {
         try {
             // 회원가입 API 사용
-            await axios.post('${BASE_URL}/api/auth/register', { userName, email, password });
+            await axios.post('/api/auth/register', { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
             // 회원가입 성공 시 모달은 유지하고 로그인 모드로 전환 (AuthPage에서 처리됨)
         } catch (error) {
