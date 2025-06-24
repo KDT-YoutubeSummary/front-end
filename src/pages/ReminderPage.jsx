@@ -164,7 +164,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                     
                     try {
                         // summaryArchiveId를 사용해서 요약 저장소 정보 조회
-                        const libraryResponse = await fetch(`http://localhost:8080/api/summary-archives/${reminder.summaryArchiveId}`, {
+                        const libraryResponse = await fetch(`http://52.78.6.200/api/summary-archives/${reminder.summaryArchiveId}`, {
                             headers: {
                                 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                             }

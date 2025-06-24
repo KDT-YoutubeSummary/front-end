@@ -20,10 +20,11 @@ import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
 import { ReminderPage } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트 수정
 import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페이지 임포트
 
-// 앱의 핵심 로직을 담는 내부 컴포넌트
-function AppContent() {
-    const navigate = useNavigate();
-    const location = useLocation();
+    const BASE_URL = "/api";
+
+    function AppContent() {
+        const navigate = useNavigate();
+        const location = useLocation();
 
     console.log('AppContent 렌더링 시작', { location: location.pathname });
 
@@ -45,7 +46,7 @@ function AppContent() {
     const handleLoginSubmit = async (userName, password) => {
         try {
             // 인증 API 사용
-            const response = await axios.post('http://localhost:8080/api/auth/login',  { userName: userName, password: password });
+            const response = await axios.post('${BASE_URL}/auth/login',  { userName: userName, password: password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
                 localStorage.setItem('accessToken', accessToken);
@@ -90,7 +91,7 @@ function AppContent() {
     const handleSignupSubmit = async (userName, password, email) => {
         try {
             // 회원가입 API 사용
-            await axios.post('http://localhost:8080/api/auth/register', { userName, email, password });
+            await axios.post('${BASE_URL}/auth/register', { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
             // 회원가입 성공 시 모달은 유지하고 로그인 모드로 전환 (AuthPage에서 처리됨)
         } catch (error) {
@@ -162,19 +163,27 @@ function AppContent() {
     };
 
     // ✅ 모든 axios 요청에 공통 인증 헤더를 추가하는 인터셉터 설정
-    const setupAxiosInterceptors = () => {
-        axios.interceptors.request.use(
-            (config) => {
-                const token = localStorage.getItem('accessToken');
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
+        const setupAxiosInterceptors = () => {
+            axios.interceptors.request.use(
+                (config) => {
+                    const token = localStorage.getItem('accessToken');
+                    if (token) {
+                        config.headers.Authorization = `Bearer ${token}`;
+                    }
+                    return config;
+                },
+                (error) => Promise.reject(error)
+            );
+            axios.interceptors.response.use(
+                (response) => response,
+                (error) => {
+                    const { response: err } = error;
+                    if (err && err.status === 401) {
+                        handleLogout();
+                    }
+                    return Promise.reject(error);
                 }
-                return config;
-            },
-            (error) => {
-                return Promise.reject(error);
-            }
-        );
+            );
 
         // ✅ 응답 인터셉터: 401/403 에러 발생 시 자동 처리
         axios.interceptors.response.use(
@@ -345,10 +354,10 @@ function AppContent() {
                                     <User className="h-5 w-5 text-white" />
                                 </div>
                             )}
-                            
+
                             <div className="flex items-center space-x-4">
                                 <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
-                                
+
                                 {/* 페이지별 설명과 기능 태그 */}
                                 {location.pathname === '/summary' && (
                                     <div className="flex items-end space-x-3">
@@ -393,10 +402,10 @@ function AppContent() {
                                 )}
                             </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-4">
                             {isLoggedIn ? (
-                                <button 
+                                <button
                                     onClick={() => navigate('/mypage')}
                                     className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
                                 >
@@ -415,7 +424,7 @@ function AppContent() {
                     <Routes>
                         {/* 랜딩 페이지 */}
                         <Route path="/" element={<LandingPage />} />
-                        
+
                         {/* ✅ SummaryPage 컴포넌트를 직접 라우팅하여 백엔드 통신 로직이 실행되도록 합니다. */}
                         <Route path="/summary" element={
                             <div>

@@ -68,7 +68,7 @@ const RecommendationPage = () => {
     // 백엔드 서버 상태 확인 함수
     const checkBackendStatus = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/actuator/health`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200'}/actuator/health`, {
                 method: 'GET',
                 timeout: 5000
             });

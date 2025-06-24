@@ -95,15 +95,20 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
             );
 
             console.log('✅ 요약 성공:', response);
-            
+
             // 백엔드 응답 구조: { code: 200, data: {...}, message: "..." }
             const actualData = response?.data || response; // 실제 요약 데이터 추출
-            
+
             console.log('📋 응답 데이터 구조 확인:', {
                 responseStructure: {
                     code: response?.code,
                     message: response?.message,
                     hasData: !!response?.data
+            // // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
+            // const response = await axios.post('http://52.78.6.200/api/youtube/upload', requestData, {
+            //     headers: {
+            //         'Authorization': `Bearer ${token}`,
+            //         'Content-Type': 'application/json'
                 },
                 actualData: {
                     title: actualData?.title,
@@ -115,7 +120,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                     allKeys: Object.keys(actualData || {})
                 }
             });
-            
+
             setSummaryComplete(true); // 요약 완료 상태 먼저 설정
             
             // 3초 후 요약 데이터 설정 (게임 완료 화면을 위한 딜레이)
@@ -197,14 +202,14 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                         <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
                             <div className="flex items-start space-x-6">
                                 {/* 썸네일 */}
-                                <div 
+                                <div
                                     className="relative w-48 h-32 bg-black rounded-xl overflow-hidden shadow-lg cursor-pointer flex-shrink-0 ring-2 ring-white"
                                     onClick={() => window.open(youtubeUrl, '_blank')}
                                 >
                                     {summaryData.thumbnailUrl ? (
-                                        <img 
-                                            src={summaryData.thumbnailUrl} 
-                                            alt="영상 썸네일" 
+                                        <img
+                                            src={summaryData.thumbnailUrl}
+                                            alt="영상 썸네일"
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
@@ -212,7 +217,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                                             <Play className="w-12 h-12 text-white opacity-50" />
                                         </div>
                                     )}
-                                    
+
                                     {/* 재생 오버레이 */}
                                     <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
                                         <div className="bg-red-600 rounded-full p-3 transform hover:scale-110 transition-transform duration-200">
@@ -226,7 +231,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
                                         {summaryData.title || '제목 없음'}
                                     </h1>
-                                    
+
                                     <div className="flex items-center space-x-2 text-lg text-gray-700">
                                         <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
                                             <span className="text-white font-bold text-sm">
@@ -237,7 +242,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                                             {summaryData.uploaderName || '알 수 없는 채널'}
                                         </span>
                                     </div>
-                                    
+
                                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                                         {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
                                             <span className="flex items-center space-x-1">
@@ -299,7 +304,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                                         {summaryType}
                                     </span>
                                 </div>
-                                
+
                                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                                     <div className="text-gray-700 leading-relaxed whitespace-pre-line">
                                         {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
@@ -309,7 +314,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
 
                             {/* 요약 정보 섹션 */}
                             <div className="border-l-4 border-gray-400 pl-4">
-                                <button 
+                                <button
                                     onClick={() => setShowSummaryInfo(!showSummaryInfo)}
                                     className="w-full text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg p-2 -ml-2"
                                 >
@@ -319,15 +324,15 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                                         </svg>
                                         요약 정보
                                     </h3>
-                                    <svg 
-                                        className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showSummaryInfo ? 'rotate-180' : ''}`} 
-                                        fill="currentColor" 
+                                    <svg
+                                        className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showSummaryInfo ? 'rotate-180' : ''}`}
+                                        fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
                                         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
                                     </svg>
                                 </button>
-                                
+
                                 {showSummaryInfo && (
                                     <div className="mt-3 space-y-3 text-sm bg-gray-50 p-4 rounded-lg">
                                         <div className="flex justify-between py-2">
@@ -350,9 +355,9 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                                         )}
                                         <div className="flex justify-between py-2">
                                             <span className="text-gray-600">원본 URL:</span>
-                                            <a 
-                                                href={youtubeUrl} 
-                                                target="_blank" 
+                                            <a
+                                                href={youtubeUrl}
+                                                target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="font-medium text-blue-600 hover:text-blue-800 text-xs truncate max-w-48"
                                             >
@@ -366,7 +371,7 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
 
                         {/* 푸터 영역 - 새로운 요약하기 버튼 */}
                         <div className="bg-gray-50 p-6 border-t border-gray-100">
-                            <button 
+                            <button
                                 onClick={reset}
                                 className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-[1.01] shadow-lg hover:shadow-xl"
                             >

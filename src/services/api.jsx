@@ -14,7 +14,7 @@ import axios from 'axios'; // App.jsx에서 인터셉터가 설정된 전역 axi
 // 필요하다면 baseURL을 설정할 수 있지만, 인터셉터는 전역에 이미 설정되어 있습니다.
 // 모든 API 호출이 이 'axios' 인스턴스를 사용하도록 합니다.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200';
 
 // 인증 토큰 설정 함수는 그대로 유지하되, 이 함수가 전역 'axios'의 기본 헤더를 설정하도록 합니다.
 export const setAuthToken = (token) => {
