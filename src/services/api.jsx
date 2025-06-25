@@ -1,7 +1,6 @@
 // src/services/api.jsx
 import axios from 'axios'; // App.jsx에서 인터셉터가 설정된 전역 axios 인스턴스를 가져옵니다.
 
-// ↓↓↓ 이 한 줄을 추가해주세요! ↓↓↓
 axios.defaults.baseURL = '/'; // 모든 axios 요청의 기본 URL을 서버 루트로 설정합니다.
 
 // API 클라이언트 생성 부분을 삭제하거나,
@@ -227,6 +226,17 @@ export const reminderApi = {
       return true;
     } catch (error) {
       console.error(`리마인더(ID: ${reminderId}) 삭제 실패:`, error);
+      throw error;
+    }
+  },
+
+  // 요약 저장소 정보 조회 (리마인더에서 사용)
+  getSummaryArchiveForReminder: async (summaryArchiveId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/summary-archives/${summaryArchiveId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`요약 저장소(ID: ${summaryArchiveId}) 조회 실패:`, error);
       throw error;
     }
   }

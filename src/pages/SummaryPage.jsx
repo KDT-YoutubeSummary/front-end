@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { FileText, Play, Sparkles } from 'lucide-react';
 import { youtubeApi } from '../services/api.jsx';
-import SummaryTypingGame from '../components/game/SummaryTypingGame';
+import GameHub from '../components/game/GameHub';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
     const [summaryType, setSummaryType] = useState('기본 요약');
@@ -20,8 +22,6 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
         '키워드 요약': 'KEYWORD',
         '타임라인 요약': 'TIMELINE'
     };
-
-
 
     const handleSubmit = async () => {
         // 로그인 체크 먼저 수행
@@ -104,11 +104,6 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
                     code: response?.code,
                     message: response?.message,
                     hasData: !!response?.data
-            // // api-endpoints.json에 정의된 엔드포인트에 맞게 요청 수정
-            // const response = await axios.post('http://52.78.6.200/api/youtube/upload', requestData, {
-            //     headers: {
-            //         'Authorization': `Bearer ${token}`,
-            //         'Content-Type': 'application/json'
                 },
                 actualData: {
                     title: actualData?.title,
@@ -193,293 +188,349 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-6 space-y-8">
-            {summaryData ? (
-                <div className="max-w-4xl mx-auto">
-                    {/* 통합된 요약 정리본 카드 */}
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                        {/* 헤더 영역 - 썸네일과 메타데이터 */}
-                        <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
-                            <div className="flex items-start space-x-6">
-                                {/* 썸네일 */}
-                                <div
-                                    className="relative w-48 h-32 bg-black rounded-xl overflow-hidden shadow-lg cursor-pointer flex-shrink-0 ring-2 ring-white"
-                                    onClick={() => window.open(youtubeUrl, '_blank')}
-                                >
-                                    {summaryData.thumbnailUrl ? (
-                                        <img
-                                            src={summaryData.thumbnailUrl}
-                                            alt="영상 썸네일"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-                                            <Play className="w-12 h-12 text-white opacity-50" />
-                                        </div>
-                                    )}
-
-                                    {/* 재생 오버레이 */}
-                                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                                        <div className="bg-red-600 rounded-full p-3 transform hover:scale-110 transition-transform duration-200">
-                                            <Play className="w-6 h-6 text-white fill-current" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 메타데이터 */}
-                                <div className="flex-1 space-y-3">
-                                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                                        {summaryData.title || '제목 없음'}
-                                    </h1>
-
-                                    <div className="flex items-center space-x-2 text-lg text-gray-700">
-                                        <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
-                                            <span className="text-white font-bold text-sm">
-                                                {(summaryData.uploaderName || 'U').charAt(0).toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <span className="font-semibold">
-                                            {summaryData.uploaderName || '알 수 없는 채널'}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                        {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
-                                            <span className="flex items-center space-x-1">
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                                                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
-                                                </svg>
-                                                <span>조회수 {summaryData.viewCount.toLocaleString()}회</span>
-                                            </span>
-                                        )}
-                                        {summaryData.uploadDate && (
-                                            <span className="flex items-center space-x-1">
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                                                </svg>
-                                                <span>{summaryData.uploadDate}</span>
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 컨텐츠 영역 */}
-                        <div className="p-6 space-y-6">
-                            {/* 주요 해시태그 섹션 */}
-                            {summaryData.tags && summaryData.tags.length > 0 && (
-                                <div className="border-l-4 border-purple-400 pl-4">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                                        <FileText className="w-5 h-5 mr-2 text-purple-600" />
-                                        주요 해시태그
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {summaryData.tags.map((tag, index) => (
-                                            <span
-                                                key={tag}
-                                                className={`inline-block px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer hover:scale-105 transform ${
-                                                    index % 4 === 0 ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                                                    index % 4 === 1 ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-                                                    index % 4 === 2 ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                                                    'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                                                }`}
-                                            >
-                                                #{tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* AI 요약 섹션 */}
-                            <div className="border-l-4 border-blue-400 pl-4">
-                                <div className="flex items-center space-x-2 mb-4">
-                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <Sparkles className="w-4 h-4 text-blue-600" />
-                                    </div>
-                                    <h2 className="text-lg font-bold text-blue-900">AI 요약</h2>
-                                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                                        {summaryType}
-                                    </span>
-                                </div>
-
-                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                                    <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                                        {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 요약 정보 섹션 */}
-                            <div className="border-l-4 border-gray-400 pl-4">
-                                <button
-                                    onClick={() => setShowSummaryInfo(!showSummaryInfo)}
-                                    className="w-full text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg p-2 -ml-2"
-                                >
-                                    <h3 className="text-lg font-bold text-gray-900 flex items-center">
-                                        <svg className="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
-                                        </svg>
-                                        요약 정보
-                                    </h3>
-                                    <svg
-                                        className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showSummaryInfo ? 'rotate-180' : ''}`}
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {summaryData ? (
+                    <div className="max-w-6xl mx-auto">
+                        {/* 통합된 요약 정리본 카드 */}
+                        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                            {/* 헤더 영역 - 썸네일과 메타데이터 */}
+                            <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-8 border-b border-gray-100">
+                                <div className="flex items-start space-x-8">
+                                    {/* 썸네일 */}
+                                    <div
+                                        className="relative w-48 h-32 bg-black rounded-xl overflow-hidden shadow-lg cursor-pointer flex-shrink-0 ring-2 ring-white"
+                                        onClick={() => window.open(youtubeUrl, '_blank')}
                                     >
-                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
-                                    </svg>
-                                </button>
-
-                                {showSummaryInfo && (
-                                    <div className="mt-3 space-y-3 text-sm bg-gray-50 p-4 rounded-lg">
-                                        <div className="flex justify-between py-2">
-                                            <span className="text-gray-600">요약 타입:</span>
-                                            <span className="font-medium text-gray-900">{summaryType}</span>
-                                        </div>
-                                        <div className="flex justify-between py-2">
-                                            <span className="text-gray-600">처리 시간:</span>
-                                            <span className="font-medium text-gray-900">약 2분</span>
-                                        </div>
-                                        <div className="flex justify-between py-2">
-                                            <span className="text-gray-600">AI 모델:</span>
-                                            <span className="font-medium text-gray-900">GPT-4</span>
-                                        </div>
-                                        {summaryData.summaryId && (
-                                            <div className="flex justify-between py-2">
-                                                <span className="text-gray-600">요약 ID:</span>
-                                                <span className="font-medium text-gray-900 font-mono text-xs">#{summaryData.summaryId}</span>
+                                        {summaryData.thumbnailUrl ? (
+                                            <img
+                                                src={summaryData.thumbnailUrl}
+                                                alt="영상 썸네일"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                                                <Play className="w-12 h-12 text-white opacity-50" />
                                             </div>
                                         )}
-                                        <div className="flex justify-between py-2">
-                                            <span className="text-gray-600">원본 URL:</span>
-                                            <a
-                                                href={youtubeUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="font-medium text-blue-600 hover:text-blue-800 text-xs truncate max-w-48"
-                                            >
-                                                {youtubeUrl}
-                                            </a>
+
+                                        {/* 재생 오버레이 */}
+                                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                                            <div className="bg-red-600 rounded-full p-3 transform hover:scale-110 transition-transform duration-200">
+                                                <Play className="w-6 h-6 text-white fill-current" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 메타데이터 */}
+                                    <div className="flex-1 space-y-3">
+                                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                                            {summaryData.title || '제목 없음'}
+                                        </h1>
+
+                                        <div className="flex items-center space-x-2 text-lg text-gray-700">
+                                            <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
+                                                <span className="text-white font-bold text-sm">
+                                                    {(summaryData.uploaderName || 'U').charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <span className="font-semibold">
+                                                {summaryData.uploaderName || '알 수 없는 채널'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                            {summaryData.viewCount !== null && summaryData.viewCount !== undefined && (
+                                                <span className="flex items-center space-x-1">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                                                    </svg>
+                                                    <span>{summaryData.viewCount?.toLocaleString() || '0'}회</span>
+                                                </span>
+                                            )}
+
+                                            <span className="text-gray-400">•</span>
+                                            <span>요약 완료</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 본문 영역 */}
+                            <div className="p-6 space-y-6">
+                                {/* 해시태그 섹션 */}
+                                {summaryData.tags && summaryData.tags.length > 0 && (
+                                    <div className="border-l-4 border-green-400 pl-4">
+                                        <h3 className="text-lg font-bold text-green-900 mb-3 flex items-center">
+                                            <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.94l1-4H9.03z" clipRule="evenodd"/>
+                                            </svg>
+                                            태그
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {summaryData.tags.map((tag, index) => (
+                                                <span
+                                                    key={index}
+                                                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                        index % 3 === 0 ? 'bg-blue-100 text-blue-800' :
+                                                            index % 3 === 1 ? 'bg-green-100 text-green-800' :
+                                                                'bg-purple-100 text-purple-800'
+                                                    }`}
+                                                >
+                                                    #{tag}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
+
+                                {/* AI 요약 섹션 */}
+                                <div className="border-l-4 border-blue-400 pl-4">
+                                    <div className="flex items-center space-x-2 mb-4">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <Sparkles className="w-4 h-4 text-blue-600" />
+                                        </div>
+                                        <h2 className="text-lg font-bold text-blue-900">AI 요약</h2>
+                                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                                            {summaryType}
+                                        </span>
+                                    </div>
+
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                        <div className="text-gray-700 leading-relaxed prose prose-lg max-w-none">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {summaryData.summary || '요약 내용을 불러올 수 없습니다.'}
+                                            </ReactMarkdown>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 요약 정보 섹션 */}
+                                <div className="border-l-4 border-gray-400 pl-4">
+                                    <button
+                                        onClick={() => setShowSummaryInfo(!showSummaryInfo)}
+                                        className="w-full text-left flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg p-2 -ml-2"
+                                    >
+                                        <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                                            <svg className="w-5 h-5 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                                            </svg>
+                                            요약 정보
+                                        </h3>
+                                        <svg
+                                            className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${showSummaryInfo ? 'rotate-180' : ''}`}
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                        >
+                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
+                                        </svg>
+                                    </button>
+
+                                    {showSummaryInfo && (
+                                        <div className="mt-3 space-y-3 text-sm bg-gray-50 p-4 rounded-lg">
+                                            <div className="flex justify-between py-2">
+                                                <span className="text-gray-600">요약 타입:</span>
+                                                <span className="font-medium text-gray-900">{summaryData.summaryType || summaryType}</span>
+                                            </div>
+                                            <div className="flex justify-between py-2">
+                                                <span className="text-gray-600">처리 시간:</span>
+                                                <span className="font-medium text-gray-900">약 2분</span>
+                                            </div>
+                                            <div className="flex justify-between py-2">
+                                                <span className="text-gray-600">AI 모델:</span>
+                                                <span className="font-medium text-gray-900">GPT-4</span>
+                                            </div>
+                                            <div className="flex justify-between py-2">
+                                                <span className="text-gray-600">원본 URL:</span>
+                                                <a
+                                                    href={youtubeUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="font-medium text-blue-600 hover:text-blue-800 text-xs truncate max-w-48"
+                                                >
+                                                    {youtubeUrl}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 푸터 영역 - 새로운 요약하기 버튼 */}
+                            <div className="bg-gray-50 p-6 border-t border-gray-100">
+                                <button
+                                    onClick={reset}
+                                    className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-[1.01] shadow-lg hover:shadow-xl"
+                                >
+                                    새로운 요약하기
+                                </button>
                             </div>
                         </div>
-
-                        {/* 푸터 영역 - 새로운 요약하기 버튼 */}
-                        <div className="bg-gray-50 p-6 border-t border-gray-100">
-                            <button
-                                onClick={reset}
-                                className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-[1.01] shadow-lg hover:shadow-xl"
-                            >
-                                새로운 요약하기
-                            </button>
-                        </div>
                     </div>
-                </div>
-            ) : (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 space-y-6">
-                    {/* 로그인 안내 메시지 */}
-                    {!isLoggedIn && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                            <div className="flex items-center space-x-3">
-                                <Sparkles className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                                <div className="text-left">
-                                    <h3 className="text-sm font-semibold text-blue-800">로그인이 필요합니다</h3>
-                                    <p className="text-sm text-blue-700 mt-1">영상 요약 기능을 이용하려면 로그인해주세요.</p>
+                ) : (
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* 왼쪽: 요약 입력 폼 */}
+                            <div className="lg:col-span-2">
+                                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-10 space-y-8 h-fit">
+                                    {/* 로그인 안내 메시지 */}
+                                    {!isLoggedIn && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+                                            <div className="flex items-center space-x-3">
+                                                <Sparkles className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                                                <div className="text-left">
+                                                    <h3 className="text-lg font-semibold text-blue-800">로그인이 필요합니다</h3>
+                                                    <p className="text-base text-blue-700 mt-1">영상 요약 기능을 이용하려면 로그인해주세요.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label htmlFor="summaryType" className="block text-lg font-semibold text-gray-700 mb-3 text-left">요약 타입</label>
+                                        <select
+                                            id="summaryType"
+                                            value={summaryType}
+                                            onChange={e => setSummaryType(e.target.value)}
+                                            className="w-full px-5 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-lg"
+                                        >
+                                            {summaryTypesOptions.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="userPurpose" className="block text-lg font-semibold text-gray-700 mb-3 text-left">사용자 목적 (선택 사항)</label>
+                                        <textarea
+                                            id="userPurpose"
+                                            value={userPurpose}
+                                            onChange={e => setUserPurpose(e.target.value)}
+                                            placeholder="어떤 목적으로 이 영상을 요약하고 싶으신가요? 예: '초보자를 위한 핵심 개념 위주로 요약해줘', '장점과 단점을 비교 분석해줘'"
+                                            className="w-full border rounded-lg px-5 py-4 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-lg"
+                                            rows={4}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="youtubeUrl" className="block text-lg font-semibold text-gray-700 mb-3 text-left">유튜브 URL</label>
+                                        <input
+                                            id="youtubeUrl"
+                                            type="url"
+                                            value={youtubeUrl}
+                                            onChange={e => setYoutubeUrl(e.target.value)}
+                                            placeholder="예: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                            className="w-full border rounded-lg px-5 py-4 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-lg"
+                                        />
+                                    </div>
+
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mt-6">
+                                            <div className="flex items-start space-x-3">
+                                                <div className="flex-shrink-0">
+                                                    <svg className="h-6 w-6 text-red-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <h3 className="text-lg font-semibold text-red-800">오류가 발생했습니다</h3>
+                                                    <div className="text-base text-red-700 mt-1 whitespace-pre-line">{error}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={isLoading || !youtubeUrl.trim()}
+                                        className="w-full bg-red-500 text-white py-5 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out flex items-center justify-center gap-2 text-lg font-semibold"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                요약 중...
+                                            </>
+                                        ) : '요약 시작'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 오른쪽: 요약 기능 안내 */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-8 h-full flex flex-col justify-between">
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                                            <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                                            요약 기능 안내
+                                        </h3>
+                                        <div className="space-y-5 text-base text-gray-700">
+                                            <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                                                <span className="text-blue-500 font-bold text-lg flex-shrink-0">•</span>
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-blue-700">기본 요약</p>
+                                                    <p className="text-sm text-gray-600 mt-1">전반적인 내용을 간결하게 정리</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                                                <span className="text-green-500 font-bold text-lg flex-shrink-0">•</span>
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-green-700">3줄 요약</p>
+                                                    <p className="text-sm text-gray-600 mt-1">핵심 내용을 3줄로 압축</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                                                <span className="text-purple-500 font-bold text-lg flex-shrink-0">•</span>
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-purple-700">키워드 요약</p>
+                                                    <p className="text-sm text-gray-600 mt-1">주요 키워드 중심으로 정리</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start space-x-3 p-3 bg-white bg-opacity-60 rounded-lg">
+                                                <span className="text-orange-500 font-bold text-lg flex-shrink-0">•</span>
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-orange-700">타임라인 요약</p>
+                                                    <p className="text-sm text-gray-600 mt-1">시간순으로 구성된 상세 요약</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* 추가 팁 섹션 */}
+                                    <div className="mt-6 p-4 bg-white bg-opacity-70 rounded-lg border border-blue-100">
+                                        <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-left">
+                                            <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                                            사용 팁
+                                        </h4>
+                                        <ul className="text-sm text-gray-600 space-y-1 text-left">
+                                            <li>• 자막이 있는 영상에서 더 정확한 요약</li>
+                                            <li>• 사용자 목적을 구체적으로 작성하면 맞춤형 요약</li>
+                                            <li>• 긴 영상일수록 타임라인 요약 추천</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    )}
-
-                    <div>
-                        <label htmlFor="summaryType" className="block text-sm font-semibold text-gray-700 mb-2 text-left">요약 타입</label>
-                        <select
-                            id="summaryType"
-                            value={summaryType}
-                            onChange={e => setSummaryType(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-base"
-                        >
-                            {summaryTypesOptions.map(type => (
-                                <option key={type} value={type}>{type}</option>
-                            ))}
-                        </select>
                     </div>
+                )}
 
-                    <div>
-                        <label htmlFor="userPurpose" className="block text-sm font-semibold text-gray-700 mb-2 text-left">사용자 목적 (선택 사항)</label>
-                        <textarea
-                            id="userPurpose"
-                            value={userPurpose}
-                            onChange={e => setUserPurpose(e.target.value)}
-                            placeholder="어떤 목적으로 이 영상을 요약하고 싶으신가요? 예: '초보자를 위한 핵심 개념 위주로 요약해줘', '장점과 단점을 비교 분석해줘'"
-                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-base"
-                            rows={3}
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="youtubeUrl" className="block text-sm font-semibold text-gray-700 mb-2 text-left">유튜브 URL</label>
-                        <input
-                            id="youtubeUrl"
-                            type="url"
-                            value={youtubeUrl}
-                            onChange={e => setYoutubeUrl(e.target.value)}
-                            placeholder="예: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                            className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 ease-in-out text-base"
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-red-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div className="text-left">
-                                    <h3 className="text-sm font-semibold text-red-800">오류가 발생했습니다</h3>
-                                    <div className="text-sm text-red-700 mt-1 whitespace-pre-line">{error}</div>
-                                </div>
-                            </div>
+                {/* 요약 중일 때 게임 표시 */}
+                {isLoading && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl w-auto min-w-96 max-w-full max-h-[95vh] overflow-auto">
+                            <GameHub 
+                                summaryComplete={summaryComplete}
+                                onComplete={() => {
+                                    // 게임 완료 시 모달 닫기 처리 (자동으로 처리됨)
+                                }}
+                            />
                         </div>
-                    )}
-
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isLoading || !youtubeUrl.trim()}
-                        className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 ease-in-out flex items-center justify-center gap-2 text-base"
-                    >
-                        {isLoading ? (
-                            <>
-                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                요약 중...
-                            </>
-                        ) : '요약 시작'}
-                    </button>
-
-                    {/* 요약 중일 때 타자 게임 표시 */}
-                    {isLoading && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div className="bg-white rounded-2xl p-2 max-w-lg w-full mx-4 shadow-2xl">
-                                <SummaryTypingGame 
-                                    summaryComplete={summaryComplete}
-                                    onComplete={() => {
-                                        // 게임 완료 시 모달 닫기 처리 (자동으로 처리됨)
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

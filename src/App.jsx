@@ -1,12 +1,12 @@
 // src/App.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import axios from 'axios';
 
 // CSS 및 아이콘 임포트
 import './App.css';
-import { Home, Archive, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings, Menu, X } from 'lucide-react';
+import { Home, Archive, Bell, User, Play, LogOut, Lightbulb, FileText, Sparkles, Clock, TrendingUp, Settings, Menu, X, HelpCircle, Star } from 'lucide-react';
 
 // 페이지 및 모달 컴포넌트 임포트
 import SummaryArchivePage from './pages/SummaryArchivePage.jsx';
@@ -21,6 +21,7 @@ import { ReminderPage } from './pages/ReminderPage.jsx'; // 리마인더 페이�
 import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페이지 임포트
 
     const BASE_URL = "/api";
+//    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
     function AppContent() {
         const navigate = useNavigate();
@@ -41,6 +42,11 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
     const [reauthCallback, setReauthCallback] = useState(null);
     const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showMyPageModals, setShowMyPageModals] = useState(false);
+    const [showHelpModal, setShowHelpModal] = useState(false);
+
+    // useRef를 사용해서 한 번만 실행되도록 제한
+    const hasProcessedStateRef = useRef(false);
 
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
@@ -163,29 +169,24 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
     };
 
     // ✅ 모든 axios 요청에 공통 인증 헤더를 추가하는 인터셉터 설정
-        const setupAxiosInterceptors = () => {
-            axios.interceptors.request.use(
-                (config) => {
-                    const token = localStorage.getItem('accessToken');
-                    if (token) {
-                        config.headers.Authorization = `Bearer ${token}`;
-                    }
-                    return config;
-                },
-                (error) => Promise.reject(error)
-            );
-            axios.interceptors.response.use(
-                (response) => response,
-                (error) => {
-                    const { response: err } = error;
-                    if (err && err.status === 401) {
-                        handleLogout();
-                    }
-                    return Promise.reject(error);
-                }
-            );
+    const setupAxiosInterceptors = () => {
+        // 기존 인터셉터 제거 (중복 방지)
+        axios.interceptors.request.clear();
+        axios.interceptors.response.clear();
 
-        // ✅ 응답 인터셉터: 401/403 에러 발생 시 자동 처리
+        // 요청 인터셉터: Authorization 헤더 추가
+        axios.interceptors.request.use(
+            (config) => {
+                const token = localStorage.getItem('accessToken');
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+                return config;
+            },
+            (error) => Promise.reject(error)
+        );
+
+        // 응답 인터셉터: 401/403 에러 발생 시 자동 처리
         axios.interceptors.response.use(
             (response) => response,
             (error) => {
@@ -193,13 +194,13 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                 if (errorResponse) {
                     if (errorResponse.status === 401) {
                         // 401 Unauthorized: 인증 토큰이 없거나 만료되었을 때
-                        // 로그인 페이지로 리다이렉트하거나 재인증 모달을 띄울 수 있습니다.
-                        handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
-                        // 또는: setShowReauthModal(true);
+                        // 로그인 관련 API가 아닌 경우에만 로그아웃 처리
+                        if (!error.config.url.includes('/api/auth/login')) {
+                            handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
+                        }
                     } else if (errorResponse.status === 403) {
                         // 403 Forbidden: 권한이 없을 때
                         handleAppShowMessage('접근 권한이 없습니다.');
-                        // 필요한 경우 홈으로 리다이렉트: navigate('/');
                     }
                 }
                 return Promise.reject(error);
@@ -248,26 +249,37 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
             }
         }
 
-        // 소셜 로그인 성공 메시지 처리
-        if (location.state?.loginSuccess) {
+        // 소셜 로그인 성공 메시지 처리 (한 번만 실행)
+        if (location.state?.loginSuccess && !hasProcessedStateRef.current) {
+            hasProcessedStateRef.current = true;
             const message = location.state?.socialLogin 
                 ? "구글 로그인이 완료되었습니다!" 
                 : "로그인이 완료되었습니다!";
             handleAppShowMessage(message);
             // 메시지를 표시한 후에는, 페이지를 새로고침해도 메시지가 다시 뜨지 않도록 state를 초기화합니다.
-            navigate(location.pathname, { replace: true, state: {} });
+            setTimeout(() => {
+                navigate(location.pathname, { replace: true, state: {} });
+            }, 100);
         }
 
-        // URL에 오류 파라미터가 있는 경우 처리
+        // URL에 오류 파라미터가 있는 경우 처리 (한 번만 실행)
         const urlParams = new URLSearchParams(location.search);
         const error = urlParams.get('error');
         const errorMessage = urlParams.get('message');
-        if (error === 'oauth_failed') {
+        if (error === 'oauth_failed' && !hasProcessedStateRef.current) {
+            hasProcessedStateRef.current = true;
             handleAppShowMessage(`소셜 로그인 실패: ${decodeURIComponent(errorMessage || '알 수 없는 오류')}`);
             // 오류 파라미터 제거
-            navigate(location.pathname, { replace: true });
+            setTimeout(() => {
+                navigate(location.pathname, { replace: true });
+            }, 100);
         }
-    }, [location.key, location.state, location.search, navigate]); // location.search 추가
+    }, [location.pathname]); // 의존성 배열 최소화
+
+    // location.state나 location.search가 변경될 때 ref 초기화
+    useEffect(() => {
+        hasProcessedStateRef.current = false;
+    }, [location.state, location.search]);
 
     const menuItems = [
         { id: 'summary', label: '영상 요약', path: '/summary', icon: FileText },
@@ -307,10 +319,13 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                 </div>
                 <div className="mt-auto p-4">
                     {isLoggedIn ? (
-                        <button onClick={() => setShowLogoutConfirmModal(true)} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-gray-700 hover:bg-gray-100 rounded-lg">
-                            <LogOut className="h-5 w-5" />
-                            <span className="hidden md:block font-medium">로그아웃</span>
-                        </button>
+                            <button
+                            onClick={() => setShowLogoutConfirmModal(true)}
+                            className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg font-medium"
+                            >
+                                <LogOut className="h-5 w-5" />
+                            <span className="hidden md:block">로그아웃</span>
+                            </button>
                     ) : (
                         <button onClick={handleShowAuthModal} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
                             <User className="h-5 w-5" />
@@ -358,60 +373,79 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                             <div className="flex items-center space-x-4">
                                 <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
 
-                                {/* 페이지별 설명과 기능 태그 */}
-                                {location.pathname === '/summary' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">AI가 분석한 영상 요약 생성</span>
+                                {/* 기능 뱃지들 */}
+                                <div className="flex items-center space-x-2">
+                                    {location.pathname === '/summary' && (
                                         <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
                                             <Sparkles className="h-4 w-4" />
                                             <span>AI 요약</span>
                                         </div>
-                                    </div>
-                                )}
-                                {location.pathname === '/summary-archives' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">YouTube 영상 요약 및 학습 관리</span>
-                                    </div>
-                                )}
-                                {location.pathname === '/reminders' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">영상 복습 알림 관리</span>
+                                    )}
+                                    {location.pathname === '/summary-archives' && (
+                                        <div className="flex items-center space-x-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full mt-1">
+                                            <Archive className="h-4 w-4" />
+                                            <span>저장소 관리</span>
+                                        </div>
+                                    )}
+                                    {location.pathname === '/reminders' && (
                                         <div className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-1">
                                             <Clock className="h-4 w-4" />
                                             <span>스마트 알림</span>
                                         </div>
-                                    </div>
-                                )}
-                                {location.pathname === '/recommendations' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">AI 기반 맞춤형 영상 추천</span>
+                                    )}
+                                    {location.pathname === '/recommendations' && (
                                         <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
                                             <TrendingUp className="h-4 w-4" />
-                                            <span>개인화 추천</span>
+                                            <span>추천</span>
                                         </div>
-                                    </div>
-                                )}
-                                {location.pathname === '/mypage' && (
-                                    <div className="flex items-end space-x-3">
-                                        <span className="text-sm text-gray-600">개인 정보 및 계정 관리</span>
+                                    )}
+                                    {location.pathname === '/mypage' && (
                                         <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
                                             <Settings className="h-4 w-4" />
                                             <span>계정 설정</span>
                                         </div>
-                                    </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 설명 문구 */}
+                            <div className="mt-2">
+                                {location.pathname === '/summary' && (
+                                    <p className="text-gray-600 text-sm">AI가 분석한 영상 요약 생성</p>
+                                )}
+                                {location.pathname === '/summary-archives' && (
+                                    <p className="text-gray-600 text-sm">저장된 요약본 관리 및 통계</p>
+                                )}
+                                {location.pathname === '/reminders' && (
+                                    <p className="text-gray-600 text-sm">복습 알림 설정 및 관리</p>
+                                )}
+                                {location.pathname === '/recommendations' && (
+                                    <p className="text-gray-600 text-sm">AI 기반 맞춤형 영상 추천</p>
+                                )}
+                                {location.pathname === '/mypage' && (
+                                    <p className="text-gray-600 text-sm">개인 정보 및 계정 관리</p>
                                 )}
                             </div>
                         </div>
 
                         <div className="flex items-center space-x-4">
                             {isLoggedIn ? (
-                                <button
-                                    onClick={() => navigate('/mypage')}
-                                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
-                                >
-                                    <User className="h-4 w-4" />
-                                    <span>{globalUserName}님</span>
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => setShowHelpModal(true)}
+                                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                        title="도움말"
+                                    >
+                                        <HelpCircle className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/mypage')}
+                                        className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                                    >
+                                        <User className="h-4 w-4" />
+                                        <span>{globalUserName}님</span>
+                                    </button>
+                                </>
                             ) : (
                                 <div className="text-sm text-gray-500">로그인되지 않음</div>
                             )}
@@ -458,6 +492,7 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                                 onShowReauthModal={setShowReauthModal} 
                                 onSetReauthCallback={setReauthCallback} 
                                 onUserLoggedOut={(message) => handleLogout(message || '로그아웃 되었습니다.')} 
+                                onShowHelpModal={() => setShowHelpModal(true)}
                             />
                         ) : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
 
@@ -506,17 +541,61 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                     onClose={handleCloseAuthModal}
                 />
             )}
+
+            {/* 도움말 모달 */}
+            <HelpModal
+                isOpen={showHelpModal}
+                onClose={() => setShowHelpModal(false)}
+            />
+
+            {/* 마이페이지 모달들 */}
+            {showMyPageModals && (
+                <MyPageModals
+                    onClose={() => setShowMyPageModals(false)}
+                    onLogout={handleLogout}
+                    globalUserName={globalUserName}
+                    onUpdateGlobalUserDisplay={(userName, email) => {
+                        setGlobalUserName(userName);
+                        localStorage.setItem('username', userName);
+                        if (email) localStorage.setItem('email', email);
+                    }}
+                    onShowMessage={handleAppShowMessage}
+                />
+            )}
         </div>
     );
 }
 
 function AuthRedirect({ onShowMessage, onShowAuthModal }) {
+    const navigate = useNavigate();
+    const [hasShownModal, setHasShownModal] = useState(false);
+
     useEffect(() => {
-        // 메시지를 표시하고 확인 버튼을 클릭하면 로그인 모달이 뜨도록 함
-        onShowMessage("로그인이 필요한 서비스입니다.", onShowAuthModal);
-    }, [onShowMessage, onShowAuthModal]);
-    
-    return null;
+        if (!hasShownModal) {
+            setHasShownModal(true);
+            onShowMessage('로그인이 필요합니다.', () => {
+                onShowAuthModal();
+            });
+        }
+    }, [hasShownModal, onShowMessage, onShowAuthModal]);
+
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+            <div className="text-center p-8">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="h-8 w-8 text-red-500" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 mb-2">로그인이 필요합니다</h2>
+                <p className="text-gray-600 mb-6">이 페이지를 이용하려면 로그인해주세요.</p>
+                <button
+                    onClick={onShowAuthModal}
+                    className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                >
+                    로그인하기
+                </button>
+            </div>
+        </div>
+    );
 }
 
 // --- 로딩 모달 컴포넌트 ---
@@ -554,6 +633,228 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }) => {
                     </button>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// 도움말 모달 컴포넌트
+const HelpModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    const helpContent = {
+        summary: {
+            title: "AI 자동 요약",
+            description: "Whisper와 GPT-4를 활용해\n유튜브 영상의 핵심 내용을\n4가지 스타일로 요약합니다.",
+            features: [
+                "기본 요약: 전반적인 내용을 간결하게 정리",
+                "3줄 요약: 핵심 내용을 3줄로 압축",
+                "키워드 요약: 주요 키워드 중심으로 정리",
+                "타임라인 요약: 시간순으로 구성된 상세 요약"
+            ]
+        },
+        archives: {
+            title: "요약 저장소",
+            description: "요약한 모든 영상을\n체계적으로 저장하고 관리하여\n나만의 지식 창고를 구축하세요.",
+            features: [
+                "카테고리별 분류 저장",
+                "검색 및 필터링 기능",
+                "개인 메모 추가 및 편집",
+                "태그별 통계 및 차트 제공"
+            ]
+        },
+        reminders: {
+            title: "스마트 알림",
+            description: "개인 학습 일정에 맞춰\n복습 시기를 알려주는\n지능형 리마인더를 설정하세요.",
+            features: [
+                "일회성 또는 반복 알림 설정",
+                "개인 메모와 함께 알림",
+                "이메일로 자동 발송",
+                "알림 시간 및 주기 조정"
+            ]
+        },
+        recommendations: {
+            title: "AI 맞춤 추천",
+            description: "학습 패턴을 분석하여\n개인에게 최적화된\n유튜브 영상을 추천해드립니다.",
+            features: [
+                "개인화된 영상 추천",
+                "추천 이유 상세 설명",
+                "관심 분야별 분류",
+                "학습 기록 기반 추천"
+            ]
+        },
+        mypage: {
+            title: "마이페이지",
+            description: "개인 정보와 계정 설정을 관리, \n학습 통계를 확인할 수 있습니다.",
+            features: [
+                "프로필 정보 수정",
+                "계정 설정 변경",
+                "사용 통계 확인",
+                "계정 보안 관리"
+            ]
+        },
+        quiz: {
+            title: "AI 퀴즈 생성 (준비중)",
+            description: "요약본을 기반으로\n맞춤형 퀴즈를 생성하고\n학습 효과를 극대화하세요.",
+            features: [
+                "요약 내용 기반 퀴즈 자동 생성",
+                "객관식, 주관식 다양한 문제 유형",
+                "실시간 채점 및 상세 해설 제공",
+                "학습 성과 추적 및 분석"
+            ]
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            {/* Hologram Background */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                <div className="absolute top-40 left-40 w-80 h-80 bg-pink-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+                <div className="absolute top-1/2 right-1/4 w-60 h-60 bg-indigo-100 rounded-full mix-blend-multiply filter blur-2xl opacity-60 animate-blob animation-delay-6000"></div>
+            </div>
+
+            <div className="relative bg-gradient-to-br from-white via-white to-gray-50 rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-gray-100 backdrop-blur-sm">
+                {/* Header */}
+                <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-red-50 to-red-100 rounded-t-3xl">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                <Play className="h-6 w-6 text-white fill-current" />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-bold text-gray-800 flex items-center space-x-3">
+                                    <span>YouSum 사용 가이드</span>
+                                    <span className="text-red-600 font-medium text-lg">AI가 만드는 스마트한 학습</span>
+                                </h2>
+                            </div>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-3 hover:bg-white/50 rounded-full transition-colors"
+                        >
+                            <svg className="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {Object.entries(helpContent).map(([key, content]) => (
+                            <div key={key} className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ${
+                                        key === 'summary' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                        key === 'archives' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                        key === 'quiz' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                        key === 'reminders' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                        key === 'recommendations' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                        'bg-gradient-to-br from-red-500 to-red-600'
+                                    }`}>
+                                        {key === 'summary' && <Sparkles className="h-6 w-6 text-white" />}
+                                        {key === 'archives' && <Archive className="h-6 w-6 text-white" />}
+                                        {key === 'quiz' && <Lightbulb className="h-6 w-6 text-white" />}
+                                        {key === 'reminders' && <Bell className="h-6 w-6 text-white" />}
+                                        {key === 'recommendations' && <TrendingUp className="h-6 w-6 text-white" />}
+                                        {key === 'mypage' && <User className="h-6 w-6 text-white" />}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-800">{content.title}</h3>
+                                </div>
+                                <p className="text-gray-600 leading-relaxed mb-4">{content.description}</p>
+                                <div className="space-y-3">
+                                    <ul className="text-sm text-gray-600 space-y-2">
+                                        {content.features.map((feature, index) => (
+                                            <li key={index} className="flex items-start space-x-3">
+                                                <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                                                <span className="leading-relaxed">{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Tips Section */}
+                    <div className="mt-8 p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-2xl border border-red-200">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                                <Lightbulb className="h-5 w-5 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold text-red-900">사용 팁</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-red-800">
+                            <div className="flex items-start space-x-2">
+                                <Star className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                <span>자막이 있는 영상에서 더 정확한 요약을 얻을 수 있습니다</span>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                                <Star className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                <span>사용자 목적을 구체적으로 작성하면 맞춤형 요약을 생성합니다</span>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                                <Star className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                <span>긴 영상일수록 타임라인 요약을 추천합니다</span>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                                <Star className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                <span>리마인더를 설정하면 복습 효과를 높일 수 있습니다</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-3xl">
+                    <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                        <div className="text-center md:text-left">
+                            <p className="text-gray-600 text-sm">
+                                문의사항이 있으시면 <span className="font-semibold text-red-600">support@yousum.com</span>으로 연락주세요.
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">YouSum에서 더 스마트한 학습을 경험하세요!</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors shadow-lg hover:shadow-red-200"
+                        >
+                            시작하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Custom Animations for Hologram Background */}
+            <style jsx>{`
+                @keyframes blob {
+                    0% {
+                        transform: translate(0px, 0px) scale(1);
+                    }
+                    33% {
+                        transform: translate(30px, -50px) scale(1.1);
+                    }
+                    66% {
+                        transform: translate(-20px, 20px) scale(0.9);
+                    }
+                    100% {
+                        transform: translate(0px, 0px) scale(1);
+                    }
+                }
+                .animate-blob {
+                    animation: blob 7s infinite;
+                }
+                .animation-delay-2000 {
+                    animation-delay: 2s;
+                }
+                .animation-delay-4000 {
+                    animation-delay: 4s;
+                }
+                .animation-delay-6000 {
+                    animation-delay: 6s;
+                }
+            `}</style>
         </div>
     );
 };

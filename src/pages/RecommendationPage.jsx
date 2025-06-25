@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom'; // React Router 추가
 import Recommendation from '../components/Recommendation';
 import { recommendationApi } from '../services/api.jsx';
-import { Lightbulb, Plus, TrendingUp, Users, Clock, Search, Hash } from 'lucide-react';
+import { Lightbulb, Plus, TrendingUp, Users, Clock, Search, Hash, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- Helper Functions ---
 const getYoutubeIdFromUrl = (url) => {
@@ -35,6 +35,10 @@ const RecommendationPage = () => {
     // --- Search States ---
     const [searchTerm, setSearchTerm] = useState('');
     const [filterTag, setFilterTag] = useState('');
+    
+    // --- Pagination States ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
 
     // 사용자 ID를 localStorage에서 가져옴 - 더 안전하게 처리
     const getUserId = () => {
@@ -264,11 +268,121 @@ const RecommendationPage = () => {
     useEffect(() => {
         filterVideos();
     }, [filterVideos]);
+    
+    // 검색어나 필터가 변경될 때 페이지를 첫 번째로 리셋
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterTag]);
+
+    // 페이지네이션 계산
+    const totalPages = Math.ceil(filteredVideos.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentVideos = filteredVideos.slice(startIndex, endIndex);
+
+    // 페이지 변경 함수
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        // 페이지 변경 시 스크롤을 맨 위로
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // 페이지네이션 렌더링 함수
+    const renderPagination = () => {
+        if (filteredVideos.length <= itemsPerPage) return null;
+
+        const pages = [];
+        const maxVisiblePages = 5;
+        
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return (
+            <div className="flex justify-center items-center space-x-2 mt-8">
+                {/* 이전 페이지 버튼 */}
+                <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded-lg flex items-center space-x-1 ${
+                        currentPage === 1
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-purple-600 hover:bg-purple-50 hover:text-purple-700'
+                    } transition-colors`}
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                    <span className="hidden sm:inline">이전</span>
+                </button>
+
+                {/* 첫 페이지 */}
+                {startPage > 1 && (
+                    <>
+                        <button
+                            onClick={() => handlePageChange(1)}
+                            className="px-3 py-2 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                        >
+                            1
+                        </button>
+                        {startPage > 2 && <span className="text-gray-400">...</span>}
+                    </>
+                )}
+
+                {/* 페이지 번호 */}
+                {pages.map(page => (
+                    <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-2 rounded-lg transition-colors ${
+                            currentPage === page
+                                ? 'bg-purple-500 text-white font-medium'
+                                : 'text-purple-600 hover:bg-purple-50'
+                        }`}
+                    >
+                        {page}
+                    </button>
+                ))}
+
+                {/* 마지막 페이지 */}
+                {endPage < totalPages && (
+                    <>
+                        {endPage < totalPages - 1 && <span className="text-gray-400">...</span>}
+                        <button
+                            onClick={() => handlePageChange(totalPages)}
+                            className="px-3 py-2 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                        >
+                            {totalPages}
+                        </button>
+                    </>
+                )}
+
+                {/* 다음 페이지 버튼 */}
+                <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 rounded-lg flex items-center space-x-1 ${
+                        currentPage === totalPages
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-purple-600 hover:bg-purple-50 hover:text-purple-700'
+                    } transition-colors`}
+                >
+                    <span className="hidden sm:inline">다음</span>
+                    <ChevronRight className="h-5 w-5" />
+                </button>
+            </div>
+        );
+    };
 
     return (
         <div id="recommendation-page" className="max-w-6xl mx-auto p-6 space-y-8">
             {/* 로딩 중 표시 */}
-            {isLoading && (
+                {isLoading && (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
                     <div className="flex flex-col items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-purple-500 mb-4"></div>
@@ -306,22 +420,22 @@ const RecommendationPage = () => {
                                 <span>영상 요약 등록</span>
                             </button>
                         </div>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* 추천 영상이 없을 때만 소개 텍스트와 버튼 표시 */}
             {!isLoading && !error && recommendedVideos.length === 0 && isDataFetched ? (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-                    <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                        <div className="text-center py-12">
+                            <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
                             <TrendingUp className="h-10 w-10 text-purple-600" />
-                        </div>
+                            </div>
                         <h3 className="text-2xl font-bold text-gray-800 mb-4">맞춤형 영상을 추천받으세요!</h3>
-                        <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
+                            <p className="text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed text-base">
                             사용자 요약 저장소에 요약본을 추가하면 AI가 태그를 분석하여<br />
                             <span className="font-semibold text-purple-600">관심사에 맞는 YouTube 동영상</span>을 추천해 드립니다.
-                        </p>
+                            </p>
 
                         <div className="flex flex-col gap-4 justify-center items-center">
                             <button
@@ -345,52 +459,67 @@ const RecommendationPage = () => {
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
                     <div className="text-center py-8">
                         <p className="text-gray-600 text-base">추천 영상 정보를 로드하는 중입니다...</p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* 추천 영상 목록 표시 */}
             {!isLoading && !error && recommendedVideos.length > 0 && (
-                <div className="space-y-6">
+                    <div className="space-y-6">
                     {/* Search and Filter Inputs */}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 flex gap-4">
-                        <div className="flex-1 relative">
+                                <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"/>
-                            <input
-                                type="text"
+                                    <input
+                                        type="text"
                                 placeholder="영상 제목으로 검색..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-base"
-                            />
-                        </div>
-                        <div className="flex-1 relative">
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-base"
+                                    />
+                                </div>
+                                <div className="flex-1 relative">
                             <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5"/>
-                            <input
-                                type="text"
-                                placeholder="태그로 필터링..."
-                                value={filterTag}
-                                onChange={(e) => setFilterTag(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-base"
-                            />
-                        </div>
+                                    <input
+                                        type="text"
+                                        placeholder="태그로 필터링..."
+                                        value={filterTag}
+                                        onChange={(e) => setFilterTag(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-700 text-base"
+                                    />
+                                </div>
                     </div>
+
+                    {/* 페이지네이션 정보 */}
+                    {filteredVideos.length > 0 && (
+                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+                            <div className="flex justify-between items-center text-sm text-gray-600">
+                                <span>총 {filteredVideos.length}개의 추천 영상</span>
+                                {totalPages > 1 && (
+                                    <span>페이지 {currentPage} / {totalPages}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Loading or No Results Message */}
                     {filteredVideos.length === 0 && (searchTerm || filterTag) ? (
-                        <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
-                            <p className="text-lg font-medium">검색 결과가 없습니다.</p>
-                            <p className="text-sm">다른 검색어나 태그를 시도해보세요.</p>
-                        </div>
+                            <div className="text-center text-gray-500 p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                                <p className="text-lg font-medium">검색 결과가 없습니다.</p>
+                                <p className="text-sm">다른 검색어나 태그를 시도해보세요.</p>
+                            </div>
                     ) : (
                         <div className="space-y-4">
-                            {filteredVideos.map((video, index) => (
-                                <Recommendation key={video.id} recommendation={video} index={index} />
-                            ))}
-                        </div>
+                            {currentVideos.map((video, index) => (
+                                <Recommendation key={video.id} recommendation={video} index={startIndex + index} />
+                                    ))}
+                                </div>
                     )}
-                </div>
-            )}
+
+                                {/* 페이지네이션 */}
+                    {renderPagination()}
+                    </div>
+                )}
         </div>
     );
 };
