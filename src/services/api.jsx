@@ -42,18 +42,31 @@ export const youtubeApi = {
       const youtubeId = extractYoutubeId(originalUrl);
       if (!youtubeId) throw new Error('유효한 YouTube ID를 추출할 수 없습니다.');
 
-      const requestData = { originalUrl, videoUrl, youtubeId, userPrompt, summaryType };
+      // ✅ 1단계: 메타데이터 먼저 저장
+      await axios.post(`/api/youtube/save`, null, {
+        params: {url: originalUrl}
+      });
+
+      // ✅ 2단계: 저장 후 요약 요청
+      const requestData = {
+        videoUrl,
+        userPrompt,
+        summaryType
+      };
+
       const response = await axios.post(`/api/youtube/upload`, requestData, {
         timeout: 300000,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {'Content-Type': 'application/json'}
       });
+
       return response.data;
+
     } catch (error) {
-      console.error('유튜브 영상 업로드 실패:', error);
+      console.error('유튜브 영상 업로드 및 요약 요청 실패:', error);
       throw error;
     }
   }
-};
+}
 
 export const authApi = {
   login: async (userName, password) => {
