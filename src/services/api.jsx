@@ -108,3 +108,48 @@ export const quizApi = {
     }
   }
 };
+
+export const summaryArchiveApi = {
+  getArchive: async () => {
+    try {
+      const response = await axios.get('/api/summary/archive');
+      return response.data;
+    } catch (error) {
+      console.error('📁 요약 아카이브 조회 실패:', error);
+      throw error;
+    }
+  }
+};
+
+export const reminderApi = {
+  getReminders: async (summaryId) => {
+    try {
+      const response = await axios.get('/api/reminder', { params: { summaryId } });
+      return response.data;
+    } catch (error) {
+      console.error('⏰ 리마인더 조회 실패:', error);
+      throw error;
+    }
+  },
+  createReminder: async (data) => {
+    try {
+      const response = await axios.post('/api/reminder', data);
+      return response.data;
+    } catch (error) {
+      console.error('⏰ 리마인더 생성 실패:', error);
+      throw error;
+    }
+  }
+};
+
+export const recommendationApi = {
+  getRecommendations: async (userId) => {
+    try {
+      const response = await axios.get('/api/recommend', { params: { userId } });
+      return response.data;
+    } catch (error) {
+      console.error('🤖 추천 영상 조회 실패:', error);
+      throw error;
+    }
+  }
+};
