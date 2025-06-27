@@ -13,19 +13,19 @@ import SummaryArchivePage from './pages/SummaryArchivePage.jsx';
 import MyPage from './pages/MyPage';
 import AuthPage from './pages/AuthPage.jsx';
 import AuthModal from './components/AuthModal.jsx';
-import SummaryPage from "./pages/SummaryPage.jsx"; // SummaryPage 임포트 확인
-import LandingPage from './pages/LandingPage.jsx'; // 랜딩 페이지 임포트 추가
+import SummaryPage from "./pages/SummaryPage.jsx";
+import LandingPage from './pages/LandingPage.jsx';
 import { MessageModal, ReauthModal } from './components/MyPageModals.jsx';
 import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
-import { ReminderPage } from './pages/ReminderPage.jsx'; // 리마인더 페이지 임포트 수정
-import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페이지 임포트
+import { ReminderPage } from './pages/ReminderPage.jsx';
+import RecommendationPage from './pages/RecommendationPage.jsx';
 
-    const BASE_URL = "/api";
-//    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// ⭐️⭐️⭐️ API 베이스 URL을 상수로 정의하여 관리합니다. ⭐️⭐️⭐️
+const API_BASE_URL = "/api/v1";
 
-    function AppContent() {
-        const navigate = useNavigate();
-        const location = useLocation();
+function AppContent() {
+    const navigate = useNavigate();
+    const location = useLocation();
 
     console.log('AppContent 렌더링 시작', { location: location.pathname });
 
@@ -51,8 +51,8 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
     // --- 핸들러 함수들 ---
     const handleLoginSubmit = async (userName, password) => {
         try {
-            // 인증 API 사용
-            const response = await axios.post('/api/auth/login',  { userName: userName, password: password });
+            // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
+            const response = await axios.post(`${API_BASE_URL}/auth/login`,  { userName: userName, password: password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
                 localStorage.setItem('accessToken', accessToken);
@@ -62,13 +62,11 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                 setIsLoggedIn(true);
                 setGlobalUserName(username);
                 setGlobalUserId(userId);
-                setShowAuthModal(false); // 모달 닫기
+                setShowAuthModal(false);
                 handleAppShowMessage('로그인 성공!');
-                // 요약 페이지로 이동
                 navigate('/summary', { replace: true });
             }
         } catch (error) {
-            // 서버 응답에 따른 구체적인 오류 메시지 처리
             let errorMessage = '';
             if (error.response) {
                 const { status, data } = error.response;
@@ -88,28 +86,22 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
             } else {
                 errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
             }
-            
-            // 에러를 throw하여 AuthPage에서 로컬 메시지로 표시
             throw new Error(errorMessage);
         }
     };
 
     const handleSignupSubmit = async (userName, password, email) => {
         try {
-            // 회원가입 API 사용
-            await axios.post('/api/auth/register', { userName, email, password });
+            // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
+            await axios.post(`${API_BASE_URL}/auth/register`, { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
-            // 회원가입 성공 시 모달은 유지하고 로그인 모드로 전환 (AuthPage에서 처리됨)
         } catch (error) {
             console.error('회원가입 오류:', error);
-            
-            // 서버 응답에 따른 구체적인 오류 메시지 처리
+
             let errorMessage = '';
             if (error.response) {
                 const { status, data } = error.response;
                 if (status === 400 || status === 409) {
-                    // 백엔드에서 UserAlreadyExistsException을 던지는 경우
-                    // 백엔드에서 보내는 구체적인 메시지 우선 사용
                     errorMessage = data.message || data.error || '회원가입 중 오류가 발생했습니다.';
                 } else if (status === 500) {
                     errorMessage = data.message || '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
@@ -121,8 +113,7 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
             } else {
                 errorMessage = '회원가입 중 예상치 못한 오류가 발생했습니다.';
             }
-            
-            // 오류 메시지를 표시하고 에러를 다시 던져서 AuthPage에서 성공 처리를 하지 않도록 함
+
             handleAppShowMessage(errorMessage);
             throw new Error(errorMessage);
         }
@@ -130,23 +121,19 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
 
     const handleLogout = (message = '로그아웃 되었습니다.') => {
         console.log('로그아웃 시작');
-        
-        // localStorage 정리
+
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
-        
-        // 상태 업데이트
+
         setIsLoggedIn(false);
         setGlobalUserName('Guest');
         setGlobalUserId(null);
-        
+
         console.log('로그아웃 완료, 상태:', { isLoggedIn: false, userName: 'Guest' });
-        
-        // 메시지 표시
+
         handleAppShowMessage(message);
-        
-        // 랜딩 페이지로 이동
+
         navigate('/', { replace: true });
     };
 
@@ -162,19 +149,15 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
 
     const handleCloseAuthModal = () => {
         setShowAuthModal(false);
-        // 로그인 모달을 닫을 때 랜딩 페이지로 이동 (이미 랜딩 페이지라면 이동하지 않음)
         if (location.pathname !== '/') {
             navigate('/', { replace: true });
         }
     };
 
-    // ✅ 모든 axios 요청에 공통 인증 헤더를 추가하는 인터셉터 설정
     const setupAxiosInterceptors = () => {
-        // 기존 인터셉터 제거 (중복 방지)
         axios.interceptors.request.clear();
         axios.interceptors.response.clear();
 
-        // 요청 인터셉터: Authorization 헤더 추가
         axios.interceptors.request.use(
             (config) => {
                 const token = localStorage.getItem('accessToken');
@@ -186,20 +169,17 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
             (error) => Promise.reject(error)
         );
 
-        // 응답 인터셉터: 401/403 에러 발생 시 자동 처리
         axios.interceptors.response.use(
             (response) => response,
             (error) => {
                 const { response: errorResponse } = error;
                 if (errorResponse) {
                     if (errorResponse.status === 401) {
-                        // 401 Unauthorized: 인증 토큰이 없거나 만료되었을 때
-                        // 로그인 관련 API가 아닌 경우에만 로그아웃 처리
-                        if (!error.config.url.includes('/api/auth/login')) {
+                        // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
+                        if (!error.config.url.includes(`${API_BASE_URL}/auth/login`)) {
                             handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
                         }
                     } else if (errorResponse.status === 403) {
-                        // 403 Forbidden: 권한이 없을 때
                         handleAppShowMessage('접근 권한이 없습니다.');
                     }
                 }
@@ -208,28 +188,22 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
         );
     };
 
-    // --- useEffects ---
-    // 컴포넌트 마운트 시 한 번만 axios 인터셉터 설정
     useEffect(() => {
         setupAxiosInterceptors();
-    }, []); // 빈 배열은 마운트 시 한 번만 실행됨을 의미
+    }, []);
 
-
-    // --- useEffects ---
-    // 페이지 이동 시마다 로그인 상태를 다시 확인 (소셜 로그인 리다이렉트 포함)
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
         const storedUserId = localStorage.getItem('userId');
         const storedUserName = localStorage.getItem('username');
-        
-        console.log('로그인 상태 확인:', { 
-            hasToken: !!token, 
-            storedUserId, 
+
+        console.log('로그인 상태 확인:', {
+            hasToken: !!token,
+            storedUserId,
             storedUserName,
-            pathname: location.pathname 
+            pathname: location.pathname
         });
 
-        // 토큰이 있고 유효해 보이는 경우에만 로그인 상태로 설정
         if (token && storedUserId && storedUserName) {
             console.log('✅ 로그인 상태로 설정');
             setIsLoggedIn(true);
@@ -237,11 +211,9 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
             setGlobalUserId(storedUserId);
         } else {
             console.log('❌ 로그아웃 상태로 설정:', { token: !!token, storedUserId, storedUserName });
-            // 토큰이 없거나 불완전한 경우 로그아웃 상태로 설정
             setIsLoggedIn(false);
             setGlobalUserName('Guest');
             setGlobalUserId(null);
-            // 불완전한 로그인 데이터 정리
             if (token && (!storedUserId || !storedUserName)) {
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('userId');
@@ -249,34 +221,29 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
             }
         }
 
-        // 소셜 로그인 성공 메시지 처리 (한 번만 실행)
         if (location.state?.loginSuccess && !hasProcessedStateRef.current) {
             hasProcessedStateRef.current = true;
-            const message = location.state?.socialLogin 
-                ? "구글 로그인이 완료되었습니다!" 
+            const message = location.state?.socialLogin
+                ? "구글 로그인이 완료되었습니다!"
                 : "로그인이 완료되었습니다!";
             handleAppShowMessage(message);
-            // 메시지를 표시한 후에는, 페이지를 새로고침해도 메시지가 다시 뜨지 않도록 state를 초기화합니다.
             setTimeout(() => {
                 navigate(location.pathname, { replace: true, state: {} });
             }, 100);
         }
 
-        // URL에 오류 파라미터가 있는 경우 처리 (한 번만 실행)
         const urlParams = new URLSearchParams(location.search);
         const error = urlParams.get('error');
         const errorMessage = urlParams.get('message');
         if (error === 'oauth_failed' && !hasProcessedStateRef.current) {
             hasProcessedStateRef.current = true;
             handleAppShowMessage(`소셜 로그인 실패: ${decodeURIComponent(errorMessage || '알 수 없는 오류')}`);
-            // 오류 파라미터 제거
             setTimeout(() => {
                 navigate(location.pathname, { replace: true });
             }, 100);
         }
-    }, [location.pathname]); // 의존성 배열 최소화
+    }, [location.pathname]);
 
-    // location.state나 location.search가 변경될 때 ref 초기화
     useEffect(() => {
         hasProcessedStateRef.current = false;
     }, [location.state, location.search]);
@@ -298,211 +265,198 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
 
     return (
         <div className="flex min-h-screen w-full bg-gray-50 font-inter">
-            {/* Sidebar - 랜딩 페이지에서는 숨김 */}
             {location.pathname !== '/' && (
-            <nav className="w-20 md:w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col">
-                <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
-                    <Link to="/" className="flex items-center space-x-2 justify-center md:justify-start">
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center shadow-md">
-                            <Play className="h-5 w-5 md:h-6 md:w-6 text-white fill-current" />
-                        </div>
-                        <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
-                    </Link>
-                </div>
-                <div className="mt-4 flex-grow">
-                    {menuItems.map((item) => (
-                        <Link key={item.id} to={item.path} className={`w-full flex items-center justify-center md:justify-start space-x-3 px-3 py-3 md:px-6 md:py-4 text-left transition-all duration-200 ease-in-out ${location.pathname === item.path ? 'bg-red-100 text-red-700 border-r-4 border-red-500 font-semibold' : 'text-gray-700 hover:bg-red-50'}`}>
-                            <item.icon className="h-5 w-5" />
-                            <span className="hidden md:block">{item.label}</span>
+                <nav className="w-20 md:w-64 flex-none bg-white shadow-lg border-r border-gray-200 flex flex-col">
+                    <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
+                        <Link to="/" className="flex items-center space-x-2 justify-center md:justify-start">
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center shadow-md">
+                                <Play className="h-5 w-5 md:h-6 md:w-6 text-white fill-current" />
+                            </div>
+                            <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-800">YouSum</h1>
                         </Link>
-                    ))}
-                </div>
-                <div className="mt-auto p-4">
-                    {isLoggedIn ? (
+                    </div>
+                    <div className="mt-4 flex-grow">
+                        {menuItems.map((item) => (
+                            <Link key={item.id} to={item.path} className={`w-full flex items-center justify-center md:justify-start space-x-3 px-3 py-3 md:px-6 md:py-4 text-left transition-all duration-200 ease-in-out ${location.pathname === item.path ? 'bg-red-100 text-red-700 border-r-4 border-red-500 font-semibold' : 'text-gray-700 hover:bg-red-50'}`}>
+                                <item.icon className="h-5 w-5" />
+                                <span className="hidden md:block">{item.label}</span>
+                            </Link>
+                        ))}
+                    </div>
+                    <div className="mt-auto p-4">
+                        {isLoggedIn ? (
                             <button
-                            onClick={() => setShowLogoutConfirmModal(true)}
-                            className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg font-medium"
+                                onClick={() => setShowLogoutConfirmModal(true)}
+                                className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg font-medium"
                             >
                                 <LogOut className="h-5 w-5" />
-                            <span className="hidden md:block">로그아웃</span>
+                                <span className="hidden md:block">로그아웃</span>
                             </button>
-                    ) : (
-                        <button onClick={handleShowAuthModal} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
-                            <User className="h-5 w-5" />
-                            <span className="hidden md:block font-medium">로그인/회원가입</span>
-                        </button>
-                    )}
-                </div>
-            </nav>
+                        ) : (
+                            <button onClick={handleShowAuthModal} className="w-full flex items-center justify-center md:justify-start space-x-3 p-3 text-left text-red-500 hover:bg-red-50 rounded-lg">
+                                <User className="h-5 w-5" />
+                                <span className="hidden md:block font-medium">로그인/회원가입</span>
+                            </button>
+                        )}
+                    </div>
+                </nav>
             )}
 
-            {/* Main Content Area */}
             <div className="flex-1 flex flex-col w-full">
-                {/* 기존 헤더 (페이지명 + 로그인된 유저 표시) - 랜딩 페이지에서는 숨김 */}
                 {location.pathname !== '/' && (
-                <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            {/* 페이지별 아이콘 */}
-                            {location.pathname === '/summary' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
-                                    <FileText className="h-5 w-5 text-white" />
-                                </div>
-                            )}
-                            {location.pathname === '/summary-archives' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
-                                    <Archive className="h-5 w-5 text-white" />
-                                </div>
-                            )}
-                            {location.pathname === '/reminders' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                                    <Bell className="h-5 w-5 text-white" />
-                                </div>
-                            )}
-                            {location.pathname === '/recommendations' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                                    <Lightbulb className="h-5 w-5 text-white" />
-                                </div>
-                            )}
-                            {location.pathname === '/mypage' && (
-                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
-                                    <User className="h-5 w-5 text-white" />
-                                </div>
-                            )}
-
+                    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
-                                <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
-
-                                {/* 기능 뱃지들 */}
-                                <div className="flex items-center space-x-2">
-                                    {location.pathname === '/summary' && (
-                                        <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
-                                            <Sparkles className="h-4 w-4" />
-                                            <span>AI 요약</span>
-                                        </div>
-                                    )}
-                                    {location.pathname === '/summary-archives' && (
-                                        <div className="flex items-center space-x-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full mt-1">
-                                            <Archive className="h-4 w-4" />
-                                            <span>저장소 관리</span>
-                                        </div>
-                                    )}
-                                    {location.pathname === '/reminders' && (
-                                        <div className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-1">
-                                            <Clock className="h-4 w-4" />
-                                            <span>스마트 알림</span>
-                                        </div>
-                                    )}
-                                    {location.pathname === '/recommendations' && (
-                                        <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
-                                            <TrendingUp className="h-4 w-4" />
-                                            <span>추천</span>
-                                        </div>
-                                    )}
-                                    {location.pathname === '/mypage' && (
-                                        <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
-                                            <Settings className="h-4 w-4" />
-                                            <span>계정 설정</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* 설명 문구 */}
-                            <div className="mt-2">
                                 {location.pathname === '/summary' && (
-                                    <p className="text-gray-600 text-sm">AI가 분석한 영상 요약 생성</p>
+                                    <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                        <FileText className="h-5 w-5 text-white" />
+                                    </div>
                                 )}
                                 {location.pathname === '/summary-archives' && (
-                                    <p className="text-gray-600 text-sm">저장된 요약본 관리 및 통계</p>
+                                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+                                        <Archive className="h-5 w-5 text-white" />
+                                    </div>
                                 )}
                                 {location.pathname === '/reminders' && (
-                                    <p className="text-gray-600 text-sm">복습 알림 설정 및 관리</p>
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                        <Bell className="h-5 w-5 text-white" />
+                                    </div>
                                 )}
                                 {location.pathname === '/recommendations' && (
-                                    <p className="text-gray-600 text-sm">AI 기반 맞춤형 영상 추천</p>
+                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                                        <Lightbulb className="h-5 w-5 text-white" />
+                                    </div>
                                 )}
                                 {location.pathname === '/mypage' && (
-                                    <p className="text-gray-600 text-sm">개인 정보 및 계정 관리</p>
+                                    <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                        <User className="h-5 w-5 text-white" />
+                                    </div>
+                                )}
+
+                                <div className="flex items-center space-x-4">
+                                    <h2 className="text-2xl font-bold text-gray-800">{getCurrentPageLabel()}</h2>
+
+                                    <div className="flex items-center space-x-2">
+                                        {location.pathname === '/summary' && (
+                                            <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
+                                                <Sparkles className="h-4 w-4" />
+                                                <span>AI 요약</span>
+                                            </div>
+                                        )}
+                                        {location.pathname === '/summary-archives' && (
+                                            <div className="flex items-center space-x-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full mt-1">
+                                                <Archive className="h-4 w-4" />
+                                                <span>저장소 관리</span>
+                                            </div>
+                                        )}
+                                        {location.pathname === '/reminders' && (
+                                            <div className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-1">
+                                                <Clock className="h-4 w-4" />
+                                                <span>스마트 알림</span>
+                                            </div>
+                                        )}
+                                        {location.pathname === '/recommendations' && (
+                                            <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full mt-1">
+                                                <TrendingUp className="h-4 w-4" />
+                                                <span>추천</span>
+                                            </div>
+                                        )}
+                                        {location.pathname === '/mypage' && (
+                                            <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full mt-1">
+                                                <Settings className="h-4 w-4" />
+                                                <span>계정 설정</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-2">
+                                    {location.pathname === '/summary' && (
+                                        <p className="text-gray-600 text-sm">AI가 분석한 영상 요약 생성</p>
+                                    )}
+                                    {location.pathname === '/summary-archives' && (
+                                        <p className="text-gray-600 text-sm">저장된 요약본 관리 및 통계</p>
+                                    )}
+                                    {location.pathname === '/reminders' && (
+                                        <p className="text-gray-600 text-sm">복습 알림 설정 및 관리</p>
+                                    )}
+                                    {location.pathname === '/recommendations' && (
+                                        <p className="text-gray-600 text-sm">AI 기반 맞춤형 영상 추천</p>
+                                    )}
+                                    {location.pathname === '/mypage' && (
+                                        <p className="text-gray-600 text-sm">개인 정보 및 계정 관리</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-4">
+                                {isLoggedIn ? (
+                                    <>
+                                        <button
+                                            onClick={() => setShowHelpModal(true)}
+                                            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                            title="도움말"
+                                        >
+                                            <HelpCircle className="h-5 w-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => navigate('/mypage')}
+                                            className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                                        >
+                                            <User className="h-4 w-4" />
+                                            <span>{globalUserName}님</span>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="text-sm text-gray-500">로그인되지 않음</div>
                                 )}
                             </div>
                         </div>
-
-                        <div className="flex items-center space-x-4">
-                            {isLoggedIn ? (
-                                <>
-                                    <button
-                                        onClick={() => setShowHelpModal(true)}
-                                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                                        title="도움말"
-                                    >
-                                        <HelpCircle className="h-5 w-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/mypage')}
-                                        className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
-                                    >
-                                        <User className="h-4 w-4" />
-                                        <span>{globalUserName}님</span>
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="text-sm text-gray-500">로그인되지 않음</div>
-                            )}
-                        </div>
-                    </div>
-                </header>
+                    </header>
                 )}
 
                 <main className="flex-1 overflow-y-scroll bg-gray-100">
                     <Routes>
-                        {/* 랜딩 페이지 */}
                         <Route path="/" element={<LandingPage />} />
-
-                        {/* ✅ SummaryPage 컴포넌트를 직접 라우팅하여 백엔드 통신 로직이 실행되도록 합니다. */}
                         <Route path="/summary" element={
                             <div>
                                 {console.log('SummaryPage 렌더링 시작')}
                                 <SummaryPage onShowAuthModal={handleShowAuthModal} isLoggedIn={isLoggedIn} />
                             </div>
                         } />
-
                         <Route path="/summary-archives" element={isLoggedIn ? <SummaryArchivePage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
                         <Route path="/reminders"
                                element={isLoggedIn ? (
                                    <ReminderPage
-                                       userId={globalUserId} // userId prop 전달
-                                       isLoggedIn={isLoggedIn} // isLoggedIn prop 전달
-                                       setMessageModalContent={setMessageModalContent} // 메시지 모달 관련 props 전달
-                                       setShowMessageModal={setShowMessageModal} // 메시지 모달 관련 props 전달
+                                       userId={globalUserId}
+                                       isLoggedIn={isLoggedIn}
+                                       setMessageModalContent={setMessageModalContent}
+                                       setShowMessageModal={setShowMessageModal}
                                    />
                                ) : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />}
                         />
                         <Route path="/recommendations" element={isLoggedIn ? <RecommendationPage /> : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
-
                         <Route path="/mypage" element={isLoggedIn ? (
-                            <MyPage 
-                                isLoggedIn={isLoggedIn} 
+                            <MyPage
+                                isLoggedIn={isLoggedIn}
                                 onUpdateGlobalUserDisplay={(userName, email) => {
                                     setGlobalUserName(userName);
                                     localStorage.setItem('username', userName);
                                     if (email) localStorage.setItem('email', email);
-                                }} 
-                                onShowMessage={handleAppShowMessage} 
-                                onShowReauthModal={setShowReauthModal} 
-                                onSetReauthCallback={setReauthCallback} 
-                                onUserLoggedOut={(message) => handleLogout(message || '로그아웃 되었습니다.')} 
+                                }}
+                                onShowMessage={handleAppShowMessage}
+                                onShowReauthModal={setShowReauthModal}
+                                onSetReauthCallback={setReauthCallback}
+                                onUserLoggedOut={(message) => handleLogout(message || '로그아웃 되었습니다.')}
                                 onShowHelpModal={() => setShowHelpModal(true)}
                             />
                         ) : <AuthRedirect onShowMessage={handleAppShowMessage} onShowAuthModal={handleShowAuthModal} />} />
-
                         <Route path="/login" element={<Navigate to="/" replace />} />
                         <Route path="/oauth/redirect" element={<OAuth2RedirectHandler />} />
                     </Routes>
                 </main>
             </div>
 
-            {/* 전역 모달들 */}
             {showMessageModal && (
                 <MessageModal
                     message={messageModalContent}
@@ -542,13 +496,11 @@ import RecommendationPage from './pages/RecommendationPage.jsx'; // 추천 페�
                 />
             )}
 
-            {/* 도움말 모달 */}
             <HelpModal
                 isOpen={showHelpModal}
                 onClose={() => setShowHelpModal(false)}
             />
 
-            {/* 마이페이지 모달들 */}
             {showMyPageModals && (
                 <MyPageModals
                     onClose={() => setShowMyPageModals(false)}
@@ -598,7 +550,6 @@ function AuthRedirect({ onShowMessage, onShowAuthModal }) {
     );
 }
 
-// --- 로딩 모달 컴포넌트 ---
 const LoadingModal = ({ message }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -611,7 +562,6 @@ const LoadingModal = ({ message }) => {
     );
 };
 
-// --- 로그아웃 확인 모달 컴포넌트 ---
 const LogoutConfirmModal = ({ onConfirm, onCancel }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -637,7 +587,6 @@ const LogoutConfirmModal = ({ onConfirm, onCancel }) => {
     );
 };
 
-// 도움말 모달 컴포넌트
 const HelpModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
@@ -706,7 +655,6 @@ const HelpModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            {/* Hologram Background */}
             <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
                 <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
@@ -715,7 +663,6 @@ const HelpModal = ({ isOpen, onClose }) => {
             </div>
 
             <div className="relative bg-gradient-to-br from-white via-white to-gray-50 rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-gray-100 backdrop-blur-sm">
-                {/* Header */}
                 <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-red-50 to-red-100 rounded-t-3xl">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -740,7 +687,6 @@ const HelpModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                {/* Content */}
                 <div className="p-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {Object.entries(helpContent).map(([key, content]) => (
@@ -748,11 +694,11 @@ const HelpModal = ({ isOpen, onClose }) => {
                                 <div className="flex items-center space-x-3 mb-4">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ${
                                         key === 'summary' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                        key === 'archives' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                        key === 'quiz' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                        key === 'reminders' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                        key === 'recommendations' ? 'bg-gradient-to-br from-red-500 to-red-600' :
-                                        'bg-gradient-to-br from-red-500 to-red-600'
+                                            key === 'archives' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                                key === 'quiz' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                                    key === 'reminders' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                                        key === 'recommendations' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                                                            'bg-gradient-to-br from-red-500 to-red-600'
                                     }`}>
                                         {key === 'summary' && <Sparkles className="h-6 w-6 text-white" />}
                                         {key === 'archives' && <Archive className="h-6 w-6 text-white" />}
@@ -778,7 +724,6 @@ const HelpModal = ({ isOpen, onClose }) => {
                         ))}
                     </div>
 
-                    {/* Tips Section */}
                     <div className="mt-8 p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-2xl border border-red-200">
                         <div className="flex items-center space-x-3 mb-4">
                             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
@@ -807,7 +752,6 @@ const HelpModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-3xl">
                     <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
                         <div className="text-center md:text-left">
@@ -826,7 +770,6 @@ const HelpModal = ({ isOpen, onClose }) => {
                 </div>
             </div>
 
-            {/* Custom Animations for Hologram Background */}
             <style jsx>{`
                 @keyframes blob {
                     0% {
@@ -859,7 +802,6 @@ const HelpModal = ({ isOpen, onClose }) => {
     );
 };
 
-// 최종 App 컴포넌트
 function App() {
     return (
         <BrowserRouter>
@@ -869,4 +811,3 @@ function App() {
 }
 
 export default App;
-
