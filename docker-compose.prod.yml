@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # 백엔드 서비스 (RDS 연동 버전)
+  backend:
+    image: yousum-backend:latest
+    container_name: yousum-backend-prod
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      # RDS 연결 설정
+      - DATABASE_URL=jdbc:mysql://${RDS_ENDPOINT}:${RDS_PORT}/${RDS_DB_NAME}?useSSL=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      - DATABASE_USERNAME=${RDS_USERNAME}
+      - DATABASE_PASSWORD=${RDS_PASSWORD}
+      # AWS S3 설정
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      # 기타 환경 변수
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      # Redis 연결
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - yousum-network
+    depends_on:
+      - redis
+    volumes:
+      - backend-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 프론트엔드 서비스
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yousum-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"  # HTTPS를 위한 포트
+    networks:
+      - yousum-network
+    depends_on:
+      - backend
+    volumes:
+      # SSL 인증서를 위한 볼륨 (Let's Encrypt 사용 시)
+      - ./ssl:/etc/nginx/ssl:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis 캐시 서비스 (AWS ElastiCache 대신 임시 사용)
+  redis:
+    image: redis:7-alpine
+    container_name: yousum-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - yousum-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  yousum-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+  backend-logs:
+    driver: local 
