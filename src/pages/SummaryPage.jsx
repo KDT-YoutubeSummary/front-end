@@ -75,13 +75,13 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
             console.log('--- 요약 요청 시작 ---');
             console.log('🔐 accessToken:', token ? `존재함 (길이: ${token.length})` : '없음');
             console.log('👤 userId:', userId);
-            console.log('🔗 YouTube URL (originalUrl):', youtubeUrl);
+            console.log('🔗 YouTube URL:', youtubeUrl);
             console.log('📝 Summary Type:', summaryTypeMap[summaryType]);
             console.log('🎯 User Prompt:', userPurpose?.trim() || '없음');
             console.log('📋 요청 헤더:', `Authorization: Bearer ${token.substring(0, 20)}...`);
 
             const requestData = {
-                originalUrl: youtubeUrl,
+                url: youtubeUrl,
                 userPrompt: userPurpose?.trim() || null,
                 summaryType: summaryTypeMap[summaryType]
             };

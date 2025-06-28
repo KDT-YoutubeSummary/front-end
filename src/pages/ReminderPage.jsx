@@ -215,7 +215,7 @@ const ReminderPage = ({ userId, isLoggedIn, setMessageModalContent, setShowMessa
                                 if (libraryData.data.original_url) {
                                     const videoId = libraryData.data.original_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
                                     if (videoId) {
-                                        videoMetadata.thumbnail = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+                                        videoMetadata.thumbnail = `${import.meta.env.VITE_YOUTUBE_THUMBNAIL_BASE_URL}${videoId}/mqdefault.jpg`;
                                 }
                             }
                         }

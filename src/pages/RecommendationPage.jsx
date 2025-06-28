@@ -70,10 +70,14 @@ const RecommendationPage = () => {
     };
 
     // 백엔드 서버 상태 확인 함수
-    const checkBackendStatus = async () => {
+    const checkServerHealth = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://52.78.6.200'}actuator/health`, {
+            // 서버 헬스 체크 API 호출
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/actuator/health`, {
                 method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 timeout: 5000
             });
             

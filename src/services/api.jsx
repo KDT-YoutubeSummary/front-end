@@ -52,17 +52,17 @@ export const youtubeApi = {
   },
 
   // 유튜브 영상 업로드 및 요약 요청
-  uploadVideo: async (originalUrl, userPrompt, summaryType) => {
+  uploadVideo: async (url, userPrompt, summaryType) => {
     try {
       console.log('🚀 유튜브 요약 API 호출 시작:', {
-        originalUrl,
+        url,
         userPrompt,
         summaryType,
         endpoint: `/api/youtube/upload`
       });
 
       const requestData = {
-        originalUrl,
+        url,
         userPrompt,
         summaryType
       };
