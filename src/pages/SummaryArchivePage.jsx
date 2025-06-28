@@ -221,7 +221,7 @@ const SummaryArchivePage = () => {
                 let errorMessage = '요약 저장소를 불러오는 중 오류가 발생했습니다.';
                 
                 if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-                    errorMessage = '🌐 서버에 연결할 수 없습니다.\n\n백엔드 서버(localhost:8080)가 실행 중인지 확인해주세요.';
+                    errorMessage = '🌐 서버에 연결할 수 없습니다.\n\n백엔드 서버(배포 주소)가 실행 중인지 확인해주세요.';
                 } else if (err.response?.status === 401) {
                     errorMessage = '🔐 인증이 만료되었습니다.\n\n로그인 페이지로 이동합니다.';
                     localStorage.removeItem('accessToken');

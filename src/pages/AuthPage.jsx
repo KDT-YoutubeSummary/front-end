@@ -11,7 +11,7 @@ const AuthPage = ({ onLogin, onSignup, onMessage }) => {
     const location = useLocation();
 
 
-    const GOOGLE_LOGIN_URL = 'http://localhost:8080/oauth2/authorization/google';
+    const GOOGLE_LOGIN_URL = '/oauth2/authorization/google';
 
     // OAuth2 리다이렉트에서 온 에러 메시지 처리
     useEffect(() => {
