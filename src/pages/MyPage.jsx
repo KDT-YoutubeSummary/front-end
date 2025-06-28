@@ -38,7 +38,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
             setLoading(true);
             try {
                 console.log("MyPage: /api/mypage 호출 시도 중...");
-                const response = await axios.get('http://localhost:8080/api/mypage', {
+                const response = await axios.get('/api/mypage', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     },
@@ -112,7 +112,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
 
             console.log("MyPage: 프로필 업데이트 요청 본문:", requestBody);
 
-            const response = await axios.put('http://localhost:8080/api/auth/update', requestBody);
+            const response = await axios.put('/api/auth/update', requestBody);
 
             console.log("MyPage: 프로필 업데이트 응답 받음. 상태:", response.status, response.statusText);
 
@@ -167,7 +167,7 @@ const MyPage = ({ isLoggedIn, onUpdateGlobalUserDisplay, onShowMessage, onShowRe
         console.log("MyPage: handleDeleteAccount 시작");
         try {
             console.log("MyPage: 회원 탈퇴 요청 시도 중...");
-            const response = await axios.delete('http://localhost:8080/api/auth/delete', {
+            const response = await axios.delete('/api/auth/delete', {
                 data: { password: password }, // 비밀번호를 본문에 담아 전송
             });
 
