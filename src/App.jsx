@@ -162,10 +162,7 @@ function AppContent() {
             (config) => {
                 const token = localStorage.getItem('accessToken');
                 
-                // ⭐️⭐️⭐️ 기본 URL이 유효하지 않을 경우 현재 위치를 기준으로 URL 생성 ⭐️⭐️⭐️
-                const baseUrl = config.baseURL || API_BASE_URL || window.location.origin;
-                const absoluteUrl = new URL(config.url, baseUrl).pathname;
-
+                // ⭐️⭐️⭐️ 단순한 문자열 비교로 public path 확인 (URL 생성 없음) ⭐️⭐️⭐️
                 const publicPaths = [
                     '/api/auth/login', 
                     '/api/auth/register',
@@ -173,7 +170,7 @@ function AppContent() {
                     '/v3/api-docs'
                 ];
                 
-                const isPublicPath = publicPaths.some(path => absoluteUrl.startsWith(path));
+                const isPublicPath = publicPaths.some(path => config.url.includes(path));
 
                 if (token && !isPublicPath) {
                     config.headers.Authorization = `Bearer ${token}`;
