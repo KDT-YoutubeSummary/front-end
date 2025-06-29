@@ -54,18 +54,13 @@ export const youtubeApi = {
   // 유튜브 영상 업로드 및 요약 요청
   uploadVideo: async (videoUrl, userPrompt, summaryType) => {
     try {
-      console.log('🚀 유튜브 요약 API 호출 시작:', {
-        videoUrl,
-        userPrompt,
-        summaryType,
-        endpoint: `/api/youtube/upload`
-      });
-
       const requestData = {
-        videoUrl,
-        userPrompt,
-        summaryType
+        videoUrl: videoUrl, // 명시적으로 videoUrl 필드 사용
+        userPrompt: userPrompt,
+        summaryType: summaryType
       };
+
+      console.log('🚀 최종 API 요청 데이터:', requestData);
 
       const response = await axios.post(`/api/youtube/upload`, requestData, {
         timeout: 300000, // 5분 타임아웃

@@ -80,13 +80,6 @@ export default function SummaryPage({ onShowAuthModal, isLoggedIn }) {
             console.log('🎯 User Prompt:', userPurpose?.trim() || '없음');
             console.log('📋 요청 헤더:', `Authorization: Bearer ${token.substring(0, 20)}...`);
 
-            const requestData = {
-                url: youtubeUrl,
-                userPrompt: userPurpose?.trim() || null,
-                summaryType: summaryTypeMap[summaryType]
-            };
-            console.log('📦 요청 데이터:', requestData);
-
             // API 서비스를 통한 일관성 있는 요청 처리
             const response = await youtubeApi.uploadVideo(
                 youtubeUrl,
