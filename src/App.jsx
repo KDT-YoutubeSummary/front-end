@@ -161,14 +161,18 @@ function AppContent() {
         axios.interceptors.request.use(
             (config) => {
                 const token = localStorage.getItem('accessToken');
-                // ⭐️⭐️⭐️ 스웨거 관련 경로도 인증 토큰 없이 요청하도록 publicPaths에 추가 ⭐️⭐️⭐️
+                
+                // ⭐️⭐️⭐️ URL을 절대 경로로 생성하여 public path 여부 확인 ⭐️⭐️⭐️
+                const absoluteUrl = new URL(config.url, config.baseURL || API_BASE_URL).pathname;
+
                 const publicPaths = [
                     '/api/auth/login', 
                     '/api/auth/register',
                     '/swagger-ui',
                     '/v3/api-docs'
                 ];
-                const isPublicPath = publicPaths.some(path => config.url.includes(path));
+                
+                const isPublicPath = publicPaths.some(path => absoluteUrl.startsWith(path));
 
                 if (token && !isPublicPath) {
                     config.headers.Authorization = `Bearer ${token}`;
