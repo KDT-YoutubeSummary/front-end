@@ -20,8 +20,8 @@ import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
 import { ReminderPage } from './pages/ReminderPage.jsx';
 import RecommendationPage from './pages/RecommendationPage.jsx';
 
-// ⭐️⭐️⭐️ API 베이스 URL을 상수로 정의하여 관리합니다. ⭐️⭐️⭐️
-const API_BASE_URL = "/api/v1";
+// ⭐️⭐️⭐️ API 베이스 URL을 환경변수에서 가져오도록 수정 ⭐️⭐️⭐️
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function AppContent() {
     const navigate = useNavigate();
@@ -52,7 +52,7 @@ function AppContent() {
     const handleLoginSubmit = async (userName, password) => {
         try {
             // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
-            const response = await axios.post(`${API_BASE_URL}/auth/login`,  { userName: userName, password: password });
+            const response = await axios.post(`${API_BASE_URL}/api/auth/login`,  { userName: userName, password: password });
             if (response.data && response.data.accessToken) {
                 const { accessToken, userId, username } = response.data;
                 localStorage.setItem('accessToken', accessToken);
@@ -93,7 +93,7 @@ function AppContent() {
     const handleSignupSubmit = async (userName, password, email) => {
         try {
             // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
-            await axios.post(`${API_BASE_URL}/auth/register`, { userName, email, password });
+            await axios.post(`${API_BASE_URL}/api/auth/register`, { userName, email, password });
             handleAppShowMessage('회원가입 성공! 이제 로그인해주세요.');
         } catch (error) {
             console.error('회원가입 오류:', error);
@@ -176,7 +176,7 @@ function AppContent() {
                 if (errorResponse) {
                     if (errorResponse.status === 401) {
                         // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
-                        if (!error.config.url.includes(`${API_BASE_URL}/auth/login`)) {
+                        if (!error.config.url.includes(`${API_BASE_URL}/api/auth/login`)) {
                             handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
                         }
                     } else if (errorResponse.status === 403) {
