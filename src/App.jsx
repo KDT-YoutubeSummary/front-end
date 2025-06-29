@@ -162,8 +162,9 @@ function AppContent() {
             (config) => {
                 const token = localStorage.getItem('accessToken');
                 
-                // ⭐️⭐️⭐️ URL을 절대 경로로 생성하여 public path 여부 확인 ⭐️⭐️⭐️
-                const absoluteUrl = new URL(config.url, config.baseURL || API_BASE_URL).pathname;
+                // ⭐️⭐️⭐️ 기본 URL이 유효하지 않을 경우 현재 위치를 기준으로 URL 생성 ⭐️⭐️⭐️
+                const baseUrl = config.baseURL || API_BASE_URL || window.location.origin;
+                const absoluteUrl = new URL(config.url, baseUrl).pathname;
 
                 const publicPaths = [
                     '/api/auth/login', 
