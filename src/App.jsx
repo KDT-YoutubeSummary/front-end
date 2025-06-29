@@ -161,7 +161,16 @@ function AppContent() {
         axios.interceptors.request.use(
             (config) => {
                 const token = localStorage.getItem('accessToken');
-                if (token) {
+                // ⭐️⭐️⭐️ 스웨거 관련 경로도 인증 토큰 없이 요청하도록 publicPaths에 추가 ⭐️⭐️⭐️
+                const publicPaths = [
+                    '/api/auth/login', 
+                    '/api/auth/register',
+                    '/swagger-ui',
+                    '/v3/api-docs'
+                ];
+                const isPublicPath = publicPaths.some(path => config.url.includes(path));
+
+                if (token && !isPublicPath) {
                     config.headers.Authorization = `Bearer ${token}`;
                 }
                 return config;
@@ -172,13 +181,12 @@ function AppContent() {
         axios.interceptors.response.use(
             (response) => response,
             (error) => {
-                const { response: errorResponse } = error;
+                const { response: errorResponse, config } = error;
                 if (errorResponse) {
-                    if (errorResponse.status === 401) {
-                        // ⭐️⭐️⭐️ 수정한 API 주소 사용 ⭐️⭐️⭐️
-                        if (!error.config.url.includes(`${API_BASE_URL}/api/auth/login`)) {
-                            handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
-                        }
+                    const isAuthRequest = config.url.includes('/api/auth/login') || config.url.includes('/api/auth/register');
+                    
+                    if (errorResponse.status === 401 && !isAuthRequest) {
+                        handleLogout('인증이 만료되었습니다. 다시 로그인해주세요.');
                     } else if (errorResponse.status === 403) {
                         handleAppShowMessage('접근 권한이 없습니다.');
                     }
